@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+Thumbs.db
+.env
+
+# Fotos del study guide: material del curso, no se publican.
+# Se quedan en la laptop para crear bancos de preguntas de capitulos nuevos.
+docs/study-guide/

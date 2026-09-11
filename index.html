@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0D1219">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="A&amp;P Review">
+  <title>Koran · A&amp;P Chapter 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Koran</h1>
+    <div class="eyebrow">Daily A&amp;P Review · Chapter 1</div>
+    <div class="dateline" id="dateline"></div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" id="tab-today" role="tab" aria-selected="true" aria-controls="view-today">Today</button>
+    <button class="tab" id="tab-results" role="tab" aria-selected="false" aria-controls="view-results">Results</button>
+  </div>
+
+  <section id="view-today" role="tabpanel" aria-labelledby="tab-today" style="display:grid;gap:14px">
+    <div class="axon-card" id="axon-card" aria-live="polite">
+      <div class="axon-legend">
+        <div class="axon-text"><span class="label" id="score-label">Score</span><span id="status">0 of 10 answered</span></div>
+        <div class="score" id="score">0<small>/10</small></div>
+      </div>
+      <div class="segs" id="segs" aria-label="Today's progress"></div>
+    </div>
+    <p class="nojs" id="nojs">This preview only shows the questions. To answer them, open the file in Safari or Chrome.</p>
+    <div id="summary"></div>
+    <div id="questions"><div class="loading">Getting your questions ready…</div></div>
+    <div class="how">
+      <span>10 questions every day</span>
+      <span>True/false: one try</span>
+      <span>Other questions: 2 tries (1 point, or ½ on the 2nd try)</span>
+      <span>Missed topics come back tomorrow, asked a different way</span>
+    </div>
+  </section>
+
+  <section id="view-results" role="tabpanel" aria-labelledby="tab-results" hidden>
+    <div id="results"></div>
+  </section>
+
+  <p class="foot" id="storeNote"></p>
+  <p class="brand">@clipAI</p>
+</div>
+<script src="js/config.js"></script>
+<script src="js/bank.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

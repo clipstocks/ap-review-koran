@@ -1,0 +1,389 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Koran · A&amp;P Chapter 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0}
+:root {
+  color-scheme: dark;
+  --ground: #0D1219;
+  --surface: #151C26;
+  --ink: #E3E8F0;
+  --muted: #97A3B5;
+  --line: #293343;
+  --blue: #82A6EE;
+  --blue-tint: #1A2944;
+  --violet: #C89EDD;
+  --violet-tint: #2A1F34;
+  --ok: #5EC592;
+  --ok-tint: #133021;
+  --bad: #EF877D;
+  --bad-tint: #3A1D1B;
+  --seg-empty: #232C39;
+  --on-blue: #0D1219;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+#results { display: grid; gap: 14px; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 18px;
+  line-height: 1.5;
+}
+.wrap { max-width: 680px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 64px; display: grid; gap: 20px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--blue); outline-offset: 2px; }
+
+/* ── header ── */
+.top { display: grid; gap: 6px; justify-items: center; text-align: center; padding-block: 0 2px; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(56px, 17vw, 76px); line-height: 1; letter-spacing: -0.03em; margin: 2px 0 0; color: var(--blue); text-wrap: balance; }
+.dateline { font-size: 18px; color: var(--muted); }
+.dateline::first-letter { text-transform: uppercase; }
+
+/* ── tabs ── */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 5px; background: var(--seg-empty); border-radius: 12px; }
+.tab { border: 0; background: transparent; padding: 14px 8px; border-radius: 10px; font-weight: 700; font-size: 18px; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+
+/* ── axon progress ── */
+.axon-card { position: sticky; top: 8px; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px 10px; display: grid; gap: 6px; box-shadow: 0 6px 18px -10px rgb(20 29 43 / .35); }
+.axon-card .label { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.axon-card.final { border-color: var(--blue); }
+.axon-row { display: flex; align-items: center; gap: 14px; }
+.axon-row svg { flex: 1; min-width: 0; height: auto; display: block; }
+.score { font-family: var(--f-mono); font-weight: 500; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score small { font-size: 20px; color: var(--muted); }
+#axon { width: 100%; height: auto; display: block; }
+.axon-legend { display: flex; align-items: center; justify-content: space-between; gap: 6px 14px; font-size: 16px; color: var(--muted); }
+.axon-text { display: grid; gap: 2px; }
+.axon-legend b { color: var(--ink); }
+.ax-line { stroke: var(--muted); stroke-width: 2; fill: none; }
+.ax-soma { fill: var(--violet); }
+.ax-nuc { fill: var(--surface); }
+.ax-den { stroke: var(--violet); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.seg { fill: var(--seg-empty); stroke: var(--line); stroke-width: 1; transition: fill .35s ease; }
+.seg.ok { fill: var(--blue); stroke: var(--blue); }
+.seg.bad { fill: var(--bad); stroke: var(--bad); }
+.seg.half { fill: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); stroke: var(--blue); }
+.seg.now { stroke: var(--blue); stroke-width: 2; stroke-dasharray: 3 2.5; }
+.ax-knob { fill: var(--muted); }
+.ax-knob.lit { fill: var(--blue); }
+.seg-num { font-family: var(--f-mono); font-size: 10.5px; fill: var(--muted); text-anchor: middle; }
+.seg-num.on { fill: var(--on-blue); }
+
+/* ── question cards ── */
+#questions { display: grid; gap: 18px; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 18px; display: grid; gap: 14px; }
+.q-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.q-num { font-family: var(--f-mono); font-size: 14.5px; color: var(--muted); margin-right: auto; font-variant-numeric: tabular-nums; }
+.chip { font-family: var(--f-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.chip.review { border-color: transparent; background: var(--violet-tint); color: var(--violet); font-weight: 500; }
+.q-topic { font-size: 16px; color: var(--muted); margin-top: -6px; }
+.q-text { font-family: var(--f-body); font-weight: 700; font-size: 23px; line-height: 1.35; margin: 0; text-wrap: pretty; }
+.hint { font-size: 16px; color: var(--muted); margin: -4px 0 0; }
+.opts { display: grid; gap: 10px; }
+.opts.tf { grid-template-columns: 1fr 1fr; }
+.opt { display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 60px; text-align: left; background: var(--surface); border: 2px solid var(--line); border-radius: 12px; padding: 14px 14px; cursor: pointer; line-height: 1.35; font-size: 19px; align-items: center; transition: border-color .15s, background-color .15s; }
+.opt:hover:not(:disabled) { border-color: var(--blue); }
+.opt .key { flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 2px solid var(--line); font-family: var(--f-mono); font-size: 15px; color: var(--muted); }
+.opt.multi .key { border-radius: 5px; }
+.opt[aria-pressed="true"] { border-color: var(--blue); background: var(--blue-tint); }
+.opt[aria-pressed="true"] .key { background: var(--blue); border-color: var(--blue); color: var(--on-blue); }
+.opt:disabled { cursor: default; }
+.opt.is-correct { border-color: var(--ok); background: var(--ok-tint); }
+.opt.is-correct .key { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.opt.is-wrong { border-color: var(--bad); background: var(--bad-tint); }
+.opt.is-wrong .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.opt.is-dim { opacity: .55; }
+.opt.is-struck { opacity: .6; border-style: dashed; border-color: var(--bad); }
+.opt.is-struck span:last-child { text-decoration: line-through; text-decoration-color: var(--bad); }
+.opt.is-struck .key { border-color: var(--bad); color: var(--bad); }
+.check { width: 100%; min-height: 58px; border: 0; border-radius: 12px; background: var(--blue); color: var(--on-blue); font-weight: 700; font-size: 20px; padding: 14px 20px; cursor: pointer; }
+.check:disabled { background: var(--seg-empty); color: var(--muted); cursor: default; }
+
+.fb { border-radius: 12px; padding: 16px; display: grid; gap: 8px; font-size: 18px; }
+.fb.ok { background: var(--ok-tint); }
+.fb.bad { background: var(--bad-tint); }
+.fb.try { background: color-mix(in srgb, #D08A1E 16%, var(--surface)); }
+.fb.try .fb-title { color: color-mix(in srgb, #D08A1E 70%, var(--ink)); }
+.fb.try .mark { background: #D08A1E; }
+.fb-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.fb.ok .fb-title { color: var(--ok); }
+.fb.bad .fb-title { color: var(--bad); }
+.fb p { margin: 0; max-width: 62ch; }
+.fb .answer b { font-weight: 700; }
+.fb .why { font-size: 18px; }
+.fb .later { font-size: 16px; color: var(--muted); }
+.fb details summary { cursor: pointer; font-size: 17px; padding-block: 4px; color: var(--ok); font-weight: 700; }
+.fb details p { margin-top: 6px; font-size: 18px; }
+.mark { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--surface); font-size: 16px; line-height: 1; }
+.fb.ok .mark { background: var(--ok); }
+.fb.bad .mark { background: var(--bad); }
+
+/* ── summary ── */
+.summary { background: var(--blue-tint); border-radius: 18px; padding: 22px 18px; display: grid; gap: 14px; }
+.summary h2 { font-family: var(--f-mono); font-weight: 500; font-size: 56px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin: 0; line-height: 1.1; text-wrap: balance; }
+.summary p { margin: 0; }
+.summary h2 small { font-size: 26px; color: var(--muted); }
+.summary .msg { font-family: var(--f-display); font-weight: 800; font-size: 26px; line-height: 1.15; }
+.summary .label { font-family: var(--f-mono); font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--blue); font-weight: 500; }
+.summary ul { margin: 0; padding-left: 20px; }
+.share { display: grid; gap: 10px; }
+.btn { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 56px; border-radius: 12px; padding: 12px 16px; font-weight: 700; font-size: 18px; text-decoration: none; cursor: pointer; border: 1.5px solid var(--blue); color: var(--blue); background: transparent; }
+.btn.solid { background: var(--blue); color: var(--on-blue); }
+.small { font-size: 16px; color: var(--muted); }
+
+.loading { background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; padding: 22px 16px; color: var(--muted); text-align: center; }
+.nojs { margin: 0; background: var(--violet-tint); color: var(--ink); border-radius: 12px; padding: 0 16px; font-size: 17px; opacity: 0; max-height: 0; overflow: hidden; animation: nojs-show .3s 3s forwards; }
+@keyframes nojs-show { to { opacity: 1; max-height: 240px; padding-block: 14px; } }
+.how { font-size: 16px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.how span::before { content: "• "; color: var(--blue); }
+
+/* ── results ── */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 18px; display: grid; gap: 14px; }
+.panel h2 { font-family: var(--f-display); font-weight: 600; font-size: 24px; margin: 0; letter-spacing: -0.01em; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { display: grid; gap: 2px; }
+.stat .n { font-family: var(--f-mono); font-size: 32px; font-weight: 500; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: 15px; color: var(--muted); line-height: 1.25; }
+.strip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; }
+.cell { display: grid; gap: 3px; justify-items: center; }
+.cell .box { width: 100%; aspect-ratio: 1; max-width: 100%; border-radius: 5px; display: grid; place-items: center; font-family: var(--f-mono); font-size: 12px; font-variant-numeric: tabular-nums; background: var(--seg-empty); color: var(--muted); }
+.cell .box.s0 { background: var(--bad-tint); color: var(--bad); }
+.cell .box.s1 { background: color-mix(in srgb, var(--blue) 22%, var(--seg-empty)); color: var(--ink); }
+.cell .box.s2 { background: color-mix(in srgb, var(--blue) 38%, var(--seg-empty)); color: var(--ink); }
+.cell .box.s3 { background: color-mix(in srgb, var(--blue) 58%, var(--seg-empty)); color: var(--on-blue); }
+.cell .box.s4 { background: color-mix(in srgb, var(--blue) 78%, var(--seg-empty)); color: var(--on-blue); }
+.cell .box.s5 { background: var(--blue); color: var(--on-blue); }
+.cell .box.part { outline: 1.5px dashed var(--muted); outline-offset: -1.5px; }
+.cell .box.today { box-shadow: 0 0 0 2px var(--ink); }
+.cell .d { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.topics { display: grid; gap: 10px; }
+.trow { display: grid; gap: 4px; }
+.trow .tl { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; font-size: 17px; }
+.trow .tl span:last-child { font-family: var(--f-mono); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar { height: 10px; border-radius: 4px; background: var(--seg-empty); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar i.m { background: var(--blue); }
+.bar i.r { background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font-size: 16px; padding: 6px 11px; border-radius: 999px; background: var(--bad-tint); color: var(--bad); }
+.history { display: grid; gap: 8px; }
+.day { border: 1px solid var(--line); border-radius: 10px; }
+.day summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 12px 14px; cursor: pointer; font-size: 17px; }
+.day summary::-webkit-details-marker { display: none; }
+.day summary .dd { margin-right: auto; }
+.day summary .dd::first-letter { text-transform: uppercase; }
+.badge { font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; padding: 3px 8px; border-radius: 6px; background: var(--blue-tint); color: var(--blue); white-space: nowrap; }
+.badge.low { background: var(--bad-tint); color: var(--bad); }
+.badge.inc { background: var(--seg-empty); color: var(--muted); }
+.day .rows { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.drow { display: grid; grid-template-columns: 24px 1fr; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); font-size: 16.5px; }
+.drow:first-child { border-top: 0; }
+.drow .ic { font-weight: 700; }
+.drow .ic.y { color: var(--ok); }
+.drow .ic.n { color: var(--bad); }
+.drow .ic.h { color: var(--blue); }
+.stat .n small { font-size: 16px; color: var(--muted); }
+.drow .nm { font-weight: 700; }
+.drow .qq { color: var(--muted); }
+.empty { color: var(--muted); font-size: 17px; margin: 0; }
+.brand { margin: 0; text-align: center; font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; color: var(--muted); }
+.foot { font-size: 15px; color: var(--muted); text-align: center; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--ink); color: var(--ground); padding: 12px 16px; border-radius: 12px; font-size: 17px; max-width: calc(100% - 32px); }
+
+@media (max-width: 380px) {
+  .stat .n { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ── progress segments ── */
+.segs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.segs .seg { height: 24px; border-radius: 6px; background: var(--seg-empty); display: grid; place-items: center; font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); }
+.segs .seg.now { box-shadow: inset 0 0 0 1.5px var(--blue); color: var(--ink); }
+.segs .seg.ok { background: var(--blue); color: var(--on-blue); }
+.segs .seg.half { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.segs .seg.bad { background: var(--bad); color: var(--surface); }
+/* ── diagrams ── */
+.figure { display: grid; place-items: center; background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.dia { width: 100%; max-width: 260px; height: auto; display: block; }
+.dia-body { fill: var(--seg-empty); stroke: var(--muted); stroke-width: 1.5; }
+.dia-hi { fill: var(--blue); opacity: .85; }
+.dia-line { stroke: var(--ink); stroke-width: 2; }
+.dia-cut { stroke: var(--bad); stroke-width: 3; stroke-dasharray: 8 6; }
+.dia-navel { fill: var(--ink); }
+.dia-lbl { fill: var(--ink); font-family: var(--f-mono); font-size: 16px; font-weight: 500; text-anchor: middle; }
+.dia-lbl2 { fill: var(--muted); font-family: var(--f-mono); font-size: 12px; text-anchor: middle; }
+.dia-cap { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; text-anchor: middle; }
+
+.quiz { display: flex; flex-direction: column; gap: 18px; counter-reset: half answered; }
+.scorebar { order: -1; }
+.q input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.q { position: relative; }
+.q .fb { display: none; }
+.q:has(.c:checked):not(:has(.w:checked)) .ok1,
+.q:has(.c:checked):has(.w:checked) .ok2,
+.q:has(.w:checked ~ .w:checked):not(:has(.c:checked)) .bad,
+.q.is-tf:has(.w:checked) .bad,
+.q:not(.is-tf):has(.w:checked):not(:has(.c:checked)):not(:has(.w:checked ~ .w:checked)) .try { display: grid; }
+.q:has(input:checked) .tap { display: none; }
+.tap { margin: 0; font-size: 15px; color: var(--muted); }
+.q:has(.c:checked) .opt, .q:has(.w:checked ~ .w:checked) .opt, .q.is-tf:has(.w:checked) .opt { pointer-events: none; }
+.q:has(.c:checked) .opt.is-c, .q:has(.w:checked ~ .w:checked) .opt.is-c, .q.is-tf:has(.w:checked) .opt.is-c { border-color: var(--ok); background: var(--ok-tint); }
+.q:has(.c:checked) .opt.is-c .key, .q:has(.w:checked ~ .w:checked) .opt.is-c .key, .q.is-tf:has(.w:checked) .opt.is-c .key { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.q:has(.c:checked) .opt:not(.is-c), .q:has(.w:checked ~ .w:checked) .opt:not(.is-c) { opacity: .55; }
+.q:focus-within .opt:focus-visible { outline: 2.5px solid var(--blue); }
+.q:has(.c:checked):not(:has(.w:checked)) { counter-increment: half 2 answered 1; }
+.q:has(.c:checked):has(.w:checked) { counter-increment: half 1 answered 1; }
+.q:has(.w:checked ~ .w:checked):not(:has(.c:checked)), .q.is-tf:has(.w:checked) { counter-increment: answered 1; }
+@counter-style halves { system: fixed 0; symbols: "0" "0.5" "1" "1.5" "2" "2.5" "3" "3.5" "4" "4.5" "5" "5.5" "6" "6.5" "7" "7.5" "8" "8.5" "9" "9.5" "10"; }
+.scorebar .n::before { content: counter(half, halves); }
+.scorebar .a::before { content: counter(answered) " of 10 answered"; }
+.scorebar .final { display: none; }
+.quiz:has(#q1 .c:checked, #q1 .w:checked ~ .w:checked, #q1.is-tf .w:checked):has(#q2 .c:checked, #q2 .w:checked ~ .w:checked, #q2.is-tf .w:checked):has(#q3 .c:checked, #q3 .w:checked ~ .w:checked, #q3.is-tf .w:checked):has(#q4 .c:checked, #q4 .w:checked ~ .w:checked, #q4.is-tf .w:checked):has(#q5 .c:checked, #q5 .w:checked ~ .w:checked, #q5.is-tf .w:checked):has(#q6 .c:checked, #q6 .w:checked ~ .w:checked, #q6.is-tf .w:checked):has(#q7 .c:checked, #q7 .w:checked ~ .w:checked, #q7.is-tf .w:checked):has(#q8 .c:checked, #q8 .w:checked ~ .w:checked, #q8.is-tf .w:checked):has(#q9 .c:checked, #q9 .w:checked ~ .w:checked, #q9.is-tf .w:checked):has(#q10 .c:checked, #q10 .w:checked ~ .w:checked, #q10.is-tf .w:checked) .scorebar .final { display: block; }
+.quiz:has(#q1 .c:checked, #q1 .w:checked ~ .w:checked, #q1.is-tf .w:checked):has(#q2 .c:checked, #q2 .w:checked ~ .w:checked, #q2.is-tf .w:checked):has(#q3 .c:checked, #q3 .w:checked ~ .w:checked, #q3.is-tf .w:checked):has(#q4 .c:checked, #q4 .w:checked ~ .w:checked, #q4.is-tf .w:checked):has(#q5 .c:checked, #q5 .w:checked ~ .w:checked, #q5.is-tf .w:checked):has(#q6 .c:checked, #q6 .w:checked ~ .w:checked, #q6.is-tf .w:checked):has(#q7 .c:checked, #q7 .w:checked ~ .w:checked, #q7.is-tf .w:checked):has(#q8 .c:checked, #q8 .w:checked ~ .w:checked, #q8.is-tf .w:checked):has(#q9 .c:checked, #q9 .w:checked ~ .w:checked, #q9.is-tf .w:checked):has(#q10 .c:checked, #q10 .w:checked ~ .w:checked, #q10.is-tf .w:checked) .scorebar .label-score { display: none; }
+.quiz:has(#q1 .c:checked, #q1 .w:checked ~ .w:checked, #q1.is-tf .w:checked):has(#q2 .c:checked, #q2 .w:checked ~ .w:checked, #q2.is-tf .w:checked):has(#q3 .c:checked, #q3 .w:checked ~ .w:checked, #q3.is-tf .w:checked):has(#q4 .c:checked, #q4 .w:checked ~ .w:checked, #q4.is-tf .w:checked):has(#q5 .c:checked, #q5 .w:checked ~ .w:checked, #q5.is-tf .w:checked):has(#q6 .c:checked, #q6 .w:checked ~ .w:checked, #q6.is-tf .w:checked):has(#q7 .c:checked, #q7 .w:checked ~ .w:checked, #q7.is-tf .w:checked):has(#q8 .c:checked, #q8 .w:checked ~ .w:checked, #q8.is-tf .w:checked):has(#q9 .c:checked, #q9 .w:checked ~ .w:checked, #q9.is-tf .w:checked):has(#q10 .c:checked, #q10 .w:checked ~ .w:checked, #q10.is-tf .w:checked) .scorebar { border-color: var(--blue); background: var(--blue-tint); }
+.brand { margin: 8px 0 0; text-align: center; font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; color: var(--muted); }
+.segs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.segs span { height: 22px; border-radius: 6px; background: var(--seg-empty); display: grid; place-items: center; font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+#q1 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q1 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q1 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q1 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q1 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q1 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q1 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q1 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q1 .c:checked) .segs span:nth-child(1) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q1 .c:checked):has(#q1 .w:checked) .segs span:nth-child(1) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q1 .w:checked ~ .w:checked):not(:has(#q1 .c:checked)) .segs span:nth-child(1), .quiz:has(#q1.is-tf .w:checked) .segs span:nth-child(1) { background: var(--bad); color: var(--surface); }
+#q2 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q2 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q2 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q2 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q2 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q2 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q2 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q2 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q2 .c:checked) .segs span:nth-child(2) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q2 .c:checked):has(#q2 .w:checked) .segs span:nth-child(2) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q2 .w:checked ~ .w:checked):not(:has(#q2 .c:checked)) .segs span:nth-child(2), .quiz:has(#q2.is-tf .w:checked) .segs span:nth-child(2) { background: var(--bad); color: var(--surface); }
+#q3 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q3 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q3 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q3 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q3 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q3 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q3 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q3 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q3 .c:checked) .segs span:nth-child(3) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q3 .c:checked):has(#q3 .w:checked) .segs span:nth-child(3) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q3 .w:checked ~ .w:checked):not(:has(#q3 .c:checked)) .segs span:nth-child(3), .quiz:has(#q3.is-tf .w:checked) .segs span:nth-child(3) { background: var(--bad); color: var(--surface); }
+#q4 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q4 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q4 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q4 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q4 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q4 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q4 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q4 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q4 .c:checked) .segs span:nth-child(4) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q4 .c:checked):has(#q4 .w:checked) .segs span:nth-child(4) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q4 .w:checked ~ .w:checked):not(:has(#q4 .c:checked)) .segs span:nth-child(4), .quiz:has(#q4.is-tf .w:checked) .segs span:nth-child(4) { background: var(--bad); color: var(--surface); }
+#q5 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q5 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q5 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q5 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q5 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q5 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q5 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q5 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q5 .c:checked) .segs span:nth-child(5) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q5 .c:checked):has(#q5 .w:checked) .segs span:nth-child(5) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q5 .w:checked ~ .w:checked):not(:has(#q5 .c:checked)) .segs span:nth-child(5), .quiz:has(#q5.is-tf .w:checked) .segs span:nth-child(5) { background: var(--bad); color: var(--surface); }
+#q6 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q6 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q6 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q6 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q6 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q6 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q6 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q6 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q6 .c:checked) .segs span:nth-child(6) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q6 .c:checked):has(#q6 .w:checked) .segs span:nth-child(6) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q6 .w:checked ~ .w:checked):not(:has(#q6 .c:checked)) .segs span:nth-child(6), .quiz:has(#q6.is-tf .w:checked) .segs span:nth-child(6) { background: var(--bad); color: var(--surface); }
+#q7 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q7 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q7 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q7 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q7 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q7 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q7 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q7 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q7 .c:checked) .segs span:nth-child(7) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q7 .c:checked):has(#q7 .w:checked) .segs span:nth-child(7) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q7 .w:checked ~ .w:checked):not(:has(#q7 .c:checked)) .segs span:nth-child(7), .quiz:has(#q7.is-tf .w:checked) .segs span:nth-child(7) { background: var(--bad); color: var(--surface); }
+#q8 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q8 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q8 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q8 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q8 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q8 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q8 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q8 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q8 .c:checked) .segs span:nth-child(8) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q8 .c:checked):has(#q8 .w:checked) .segs span:nth-child(8) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q8 .w:checked ~ .w:checked):not(:has(#q8 .c:checked)) .segs span:nth-child(8), .quiz:has(#q8.is-tf .w:checked) .segs span:nth-child(8) { background: var(--bad); color: var(--surface); }
+#q9 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q9 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q9 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q9 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q9 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q9 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q9 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q9 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q9 .c:checked) .segs span:nth-child(9) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q9 .c:checked):has(#q9 .w:checked) .segs span:nth-child(9) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q9 .w:checked ~ .w:checked):not(:has(#q9 .c:checked)) .segs span:nth-child(9), .quiz:has(#q9.is-tf .w:checked) .segs span:nth-child(9) { background: var(--bad); color: var(--surface); }
+#q10 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q10 input:nth-of-type(1).w:checked ~ .opts .opt:nth-child(1) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q10 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q10 input:nth-of-type(2).w:checked ~ .opts .opt:nth-child(2) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q10 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q10 input:nth-of-type(3).w:checked ~ .opts .opt:nth-child(3) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+#q10 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) { pointer-events: none; border-color: var(--bad); background: var(--bad-tint); opacity: 1; }
+#q10 input:nth-of-type(4).w:checked ~ .opts .opt:nth-child(4) .key { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.quiz:has(#q10 .c:checked) .segs span:nth-child(10) { background: var(--blue); color: var(--on-blue); }
+.quiz:has(#q10 .c:checked):has(#q10 .w:checked) .segs span:nth-child(10) { background: color-mix(in srgb, var(--blue) 50%, var(--seg-empty)); color: var(--ink); }
+.quiz:has(#q10 .w:checked ~ .w:checked):not(:has(#q10 .c:checked)) .segs span:nth-child(10), .quiz:has(#q10.is-tf .w:checked) .segs span:nth-child(10) { background: var(--bad); color: var(--surface); }
+</style></head><body>
+<div class="wrap">
+  <header class="top">
+    <h1>Koran</h1>
+    <div class="eyebrow">Daily A&amp;P Review · Chapter 1</div>
+  </header>
+  <div class="quiz">
+    <article class="q " id="q1"><input type="checkbox" class="c" id="q1o0" aria-label="Right hypochondriac"><input type="checkbox" class="w" id="q1o1" aria-label="Epigastric"><input type="checkbox" class="w" id="q1o2" aria-label="Right lumbar"><input type="checkbox" class="w" id="q1o3" aria-label="Left hypochondriac"><div class="q-head"><span class="q-num">Question 1 of 10</span><span class="chip">Multiple choice</span></div><div class="q-topic">Abdominal regions &amp; organs</div><div class="figure"><svg class="dia" viewBox="0 0 240 230" role="img" aria-label="Abdomen divided into nine regions"><clipPath id="rclip"><rect x="30" y="20" width="180" height="180" rx="40"/></clipPath><rect class="dia-body" x="30" y="20" width="180" height="180" rx="40"/><rect class="dia-hi" x="30" y="20" width="60" height="60" clip-path="url(#rclip)"/><line class="dia-line" x1="90" y1="20" x2="90" y2="200"/><line class="dia-line" x1="150" y1="20" x2="150" y2="200"/><line class="dia-line" x1="30" y1="80" x2="210" y2="80"/><line class="dia-line" x1="30" y1="140" x2="210" y2="140"/><circle class="dia-navel" cx="120" cy="110" r="4"/><text class="dia-lbl" x="12" y="115">R</text><text class="dia-lbl" x="220" y="115">L</text><text class="dia-cap" x="120" y="222">patient facing you</text></svg></div><p class="q-text">Which of the 9 abdominal regions is highlighted? (R = patient's right)</p><div class="opts "><label for="q1o0" class="opt is-c"><span class="key">A</span><span>Right hypochondriac</span></label><label for="q1o1" class="opt "><span class="key">B</span><span>Epigastric</span></label><label for="q1o2" class="opt "><span class="key">C</span><span>Right lumbar</span></label><label for="q1o3" class="opt "><span class="key">D</span><span>Left hypochondriac</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>The side columns, from top to bottom: HYPOCHONDRIAC (under the ribs), LUMBAR (beside the belly button), ILIAC/INGUINAL (near the hips and groin). Each has a right and a left.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">The side columns, from top to bottom: HYPOCHONDRIAC (under the ribs), LUMBAR (beside the belly button), ILIAC/INGUINAL (near the hips and groin). Each has a right and a left.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Right hypochondriac</b></p><p class="why">The side columns, from top to bottom: HYPOCHONDRIAC (under the ribs), LUMBAR (beside the belly button), ILIAC/INGUINAL (near the hips and groin). Each has a right and a left.</p></div></article><article class="q " id="q2"><input type="checkbox" class="c" id="q2o0" aria-label="Response to the environment"><input type="checkbox" class="w" id="q2o1" aria-label="Adaptation over generations"><input type="checkbox" class="w" id="q2o2" aria-label="Heredity"><input type="checkbox" class="w" id="q2o3" aria-label="Reproduction"><div class="q-head"><span class="q-num">Question 2 of 10</span><span class="chip">Analyze the case</span></div><div class="q-topic">Organization &amp; homeostasis</div><p class="q-text">You touch a hot pan and pull your hand away. Which characteristic of life does this show?</p><div class="opts "><label for="q2o0" class="opt is-c"><span class="key">A</span><span>Response to the environment</span></label><label for="q2o1" class="opt "><span class="key">B</span><span>Adaptation over generations</span></label><label for="q2o2" class="opt "><span class="key">C</span><span>Heredity</span></label><label for="q2o3" class="opt "><span class="key">D</span><span>Reproduction</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Living things have cells, metabolism, reproduction, response to the environment, and adaptation (evolution). The slides' memory trick is CHRMD: Cells, Homeostasis, Reproduction, Metabolism, DNA/Heredity.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Living things have cells, metabolism, reproduction, response to the environment, and adaptation (evolution). The slides' memory trick is CHRMD: Cells, Homeostasis, Reproduction, Metabolism, DNA/Heredity.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Response to the environment</b></p><p class="why">Living things have cells, metabolism, reproduction, response to the environment, and adaptation (evolution). The slides' memory trick is CHRMD: Cells, Homeostasis, Reproduction, Metabolism, DNA/Heredity.</p></div></article><article class="q is-tf" id="q3"><input type="checkbox" class="w" id="q3o0" aria-label="True"><input type="checkbox" class="c" id="q3o1" aria-label="False"><div class="q-head"><span class="q-num">Question 3 of 10</span><span class="chip">True or false</span></div><div class="q-topic">Position, directions &amp; planes</div><p class="q-text">Lateral means toward the midline of the body.</p><div class="opts tf"><label for="q3o0" class="opt "><span class="key">T</span><span>True</span></label><label for="q3o1" class="opt is-c"><span class="key">F</span><span>False</span></label></div><p class="tap">Tap an answer. True/false has one try.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Medial = toward the MIDLINE (an imaginary line down the middle of the body). Lateral = AWAY from the midline, toward the sides.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Medial = toward the MIDLINE (an imaginary line down the middle of the body). Lateral = AWAY from the midline, toward the sides.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>False</b></p><p class="why">Medial = toward the MIDLINE (an imaginary line down the middle of the body). Lateral = AWAY from the midline, toward the sides.</p></div></article><article class="q " id="q4"><input type="checkbox" class="w" id="q4o0" aria-label="Mediastinum"><input type="checkbox" class="w" id="q4o1" aria-label="Pericardium"><input type="checkbox" class="w" id="q4o2" aria-label="Peritoneum"><input type="checkbox" class="c" id="q4o3" aria-label="Pleurae"><div class="q-head"><span class="q-num">Question 4 of 10</span><span class="chip">Multiple choice</span></div><div class="q-topic">Body cavities &amp; membranes</div><p class="q-text">Which serous membrane is associated with the lungs?</p><div class="opts "><label for="q4o0" class="opt "><span class="key">A</span><span>Mediastinum</span></label><label for="q4o1" class="opt "><span class="key">B</span><span>Pericardium</span></label><label for="q4o2" class="opt "><span class="key">C</span><span>Peritoneum</span></label><label for="q4o3" class="opt is-c"><span class="key">D</span><span>Pleurae</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Serous membranes are thin linings: PERICARDIUM = heart, PLEURAE = lungs, PERITONEUM = abdominopelvic cavity. Their serous fluid lets organs move and expand without friction.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Serous membranes are thin linings: PERICARDIUM = heart, PLEURAE = lungs, PERITONEUM = abdominopelvic cavity. Their serous fluid lets organs move and expand without friction.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Pleurae</b></p><p class="why">Serous membranes are thin linings: PERICARDIUM = heart, PLEURAE = lungs, PERITONEUM = abdominopelvic cavity. Their serous fluid lets organs move and expand without friction.</p></div></article><article class="q " id="q5"><input type="checkbox" class="c" id="q5o0" aria-label="Situated behind the peritoneum"><input type="checkbox" class="w" id="q5o1" aria-label="Above the diaphragm"><input type="checkbox" class="w" id="q5o2" aria-label="Inside the pericardium"><input type="checkbox" class="w" id="q5o3" aria-label="Inside the cranial cavity"><div class="q-head"><span class="q-num">Question 5 of 10</span><span class="chip">Multiple choice</span></div><div class="q-topic">Abdominal regions &amp; organs</div><p class="q-text">What does retroperitoneal mean?</p><div class="opts "><label for="q5o0" class="opt is-c"><span class="key">A</span><span>Situated behind the peritoneum</span></label><label for="q5o1" class="opt "><span class="key">B</span><span>Above the diaphragm</span></label><label for="q5o2" class="opt "><span class="key">C</span><span>Inside the pericardium</span></label><label for="q5o3" class="opt "><span class="key">D</span><span>Inside the cranial cavity</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Retroperitoneal = BEHIND the peritoneum. Remember SAD PUCKER: Suprarenal glands, Abdominal aorta, Duodenum, Pancreas, Ureters, Colon (ascending/descending), Kidneys, Esophagus (inferior part), Rectum.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Retroperitoneal = BEHIND the peritoneum. Remember SAD PUCKER: Suprarenal glands, Abdominal aorta, Duodenum, Pancreas, Ureters, Colon (ascending/descending), Kidneys, Esophagus (inferior part), Rectum.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Situated behind the peritoneum</b></p><p class="why">Retroperitoneal = BEHIND the peritoneum. Remember SAD PUCKER: Suprarenal glands, Abdominal aorta, Duodenum, Pancreas, Ureters, Colon (ascending/descending), Kidneys, Esophagus (inferior part), Rectum.</p></div></article><article class="q " id="q6"><input type="checkbox" class="w" id="q6o0" aria-label="PET"><input type="checkbox" class="c" id="q6o1" aria-label="X-ray"><input type="checkbox" class="w" id="q6o2" aria-label="Nuclear scan"><input type="checkbox" class="w" id="q6o3" aria-label="Angiography"><div class="q-head"><span class="q-num">Question 6 of 10</span><span class="chip">Analyze the case</span></div><div class="q-topic">Clinical conditions &amp; imaging</div><p class="q-text">A child falls and the doctor wants a quick look at a possible broken arm bone. Which imaging is most useful for bone?</p><div class="opts "><label for="q6o0" class="opt "><span class="key">A</span><span>PET</span></label><label for="q6o1" class="opt is-c"><span class="key">B</span><span>X-ray</span></label><label for="q6o2" class="opt "><span class="key">C</span><span>Nuclear scan</span></label><label for="q6o3" class="opt "><span class="key">D</span><span>Angiography</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>X-ray uses high-energy radiation that passes through the body; it is great for bones. CT combines many X-ray images from different angles to make cross-section &quot;slices.&quot;</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">X-ray uses high-energy radiation that passes through the body; it is great for bones. CT combines many X-ray images from different angles to make cross-section &quot;slices.&quot;</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>X-ray</b></p><p class="why">X-ray uses high-energy radiation that passes through the body; it is great for bones. CT combines many X-ray images from different angles to make cross-section &quot;slices.&quot;</p></div></article><article class="q " id="q7"><input type="checkbox" class="c" id="q7o0" aria-label="Transverse (horizontal)"><input type="checkbox" class="w" id="q7o1" aria-label="Vertical"><input type="checkbox" class="w" id="q7o2" aria-label="Sagittal"><input type="checkbox" class="w" id="q7o3" aria-label="Coronal (frontal)"><div class="q-head"><span class="q-num">Question 7 of 10</span><span class="chip">Multiple choice</span></div><div class="q-topic">Position, directions &amp; planes</div><div class="figure"><svg class="dia" viewBox="0 0 240 230" role="img" aria-label="Human figure with a dashed plane line"><circle class="dia-body" cx="120" cy="38" r="20"/>
+      <rect class="dia-body" x="92" y="62" width="56" height="78" rx="14"/>
+      <rect class="dia-body" x="70" y="66" width="18" height="70" rx="9"/><rect class="dia-body" x="152" y="66" width="18" height="70" rx="9"/>
+      <rect class="dia-body" x="96" y="138" width="22" height="72" rx="10"/><rect class="dia-body" x="122" y="138" width="22" height="72" rx="10"/><line class="dia-cut" x1="40" y1="104" x2="200" y2="104"/><text class="dia-cap" x="120" y="228">front view</text></svg></div><p class="q-text">Which plane is shown by the dashed line?</p><div class="opts "><label for="q7o0" class="opt is-c"><span class="key">A</span><span>Transverse (horizontal)</span></label><label for="q7o1" class="opt "><span class="key">B</span><span>Vertical</span></label><label for="q7o2" class="opt "><span class="key">C</span><span>Sagittal</span></label><label for="q7o3" class="opt "><span class="key">D</span><span>Coronal (frontal)</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>A transverse (horizontal) plane cuts the body into a TOP (superior) piece and a BOTTOM (inferior) piece. Memory trick: Transverse = top/bottom, like slicing bread.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">A transverse (horizontal) plane cuts the body into a TOP (superior) piece and a BOTTOM (inferior) piece. Memory trick: Transverse = top/bottom, like slicing bread.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Transverse (horizontal)</b></p><p class="why">A transverse (horizontal) plane cuts the body into a TOP (superior) piece and a BOTTOM (inferior) piece. Memory trick: Transverse = top/bottom, like slicing bread.</p></div></article><article class="q " id="q8"><input type="checkbox" class="w" id="q8o0" aria-label="Enhances/amplifies the original stimulus"><input type="checkbox" class="w" id="q8o1" aria-label="Has no effect on the stimulus"><input type="checkbox" class="c" id="q8o2" aria-label="Opposes/reduces the original stimulus"><input type="checkbox" class="w" id="q8o3" aria-label="Stops all body functions"><div class="q-head"><span class="q-num">Question 8 of 10</span><span class="chip">Multiple choice</span></div><div class="q-topic">Organization &amp; homeostasis</div><p class="q-text">In negative feedback, the response:</p><div class="opts "><label for="q8o0" class="opt "><span class="key">A</span><span>Enhances/amplifies the original stimulus</span></label><label for="q8o1" class="opt "><span class="key">B</span><span>Has no effect on the stimulus</span></label><label for="q8o2" class="opt is-c"><span class="key">C</span><span>Opposes/reduces the original stimulus</span></label><label for="q8o3" class="opt "><span class="key">D</span><span>Stops all body functions</span></label></div><p class="tap">Tap an answer. You get 2 tries.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>In negative feedback, the body's response goes the OPPOSITE way of the change, bringing things back to normal. Examples: body temperature, blood pressure, blood glucose, and blood calcium.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">In negative feedback, the body's response goes the OPPOSITE way of the change, bringing things back to normal. Examples: body temperature, blood pressure, blood glucose, and blood calcium.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>Opposes/reduces the original stimulus</b></p><p class="why">In negative feedback, the body's response goes the OPPOSITE way of the change, bringing things back to normal. Examples: body temperature, blood pressure, blood glucose, and blood calcium.</p></div></article><article class="q is-tf" id="q9"><input type="checkbox" class="c" id="q9o0" aria-label="True"><input type="checkbox" class="w" id="q9o1" aria-label="False"><div class="q-head"><span class="q-num">Question 9 of 10</span><span class="chip">True or false</span></div><div class="q-topic">Position, directions &amp; planes</div><p class="q-text">Deep means farther from the surface of the body.</p><div class="opts tf"><label for="q9o0" class="opt is-c"><span class="key">T</span><span>True</span></label><label for="q9o1" class="opt "><span class="key">F</span><span>False</span></label></div><p class="tap">Tap an answer. True/false has one try.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Superficial = closer to the body SURFACE. Deep = farther INSIDE, away from the surface. The skin is superficial to the muscles.</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Superficial = closer to the body SURFACE. Deep = farther INSIDE, away from the surface. The skin is superficial to the muscles.</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>True</b></p><p class="why">Superficial = closer to the body SURFACE. Deep = farther INSIDE, away from the surface. The skin is superficial to the muscles.</p></div></article><article class="q is-tf" id="q10"><input type="checkbox" class="c" id="q10o0" aria-label="True"><input type="checkbox" class="w" id="q10o1" aria-label="False"><div class="q-head"><span class="q-num">Question 10 of 10</span><span class="chip">True or false</span></div><div class="q-topic">Body cavities &amp; membranes</div><p class="q-text">The parietal layer lines the cavity or body wall.</p><div class="opts tf"><label for="q10o0" class="opt is-c"><span class="key">T</span><span>True</span></label><label for="q10o1" class="opt "><span class="key">F</span><span>False</span></label></div><p class="tap">Tap an answer. True/false has one try.</p><div class="fb ok ok1"><div class="fb-title"><span class="mark">✓</span>Correct! +1 point</div><details><summary>See explanation</summary><p>Picture pushing your fist into a balloon: the layer touching your fist is VISCERAL (covers the organ); the outer layer is PARIETAL (lines the cavity or body wall).</p></details></div><div class="fb try"><div class="fb-title"><span class="mark">!</span>Incorrect, one more try</div><p>Pick another answer. Getting it right now is worth ½ point.</p></div><div class="fb ok ok2"><div class="fb-title"><span class="mark">✓</span>Correct on the 2nd try! +½ point</div><p class="why">Picture pushing your fist into a balloon: the layer touching your fist is VISCERAL (covers the organ); the outer layer is PARIETAL (lines the cavity or body wall).</p></div><div class="fb bad"><div class="fb-title"><span class="mark">✕</span>Incorrect · 0 points</div><p class="answer">Correct answer: <b>True</b></p><p class="why">Picture pushing your fist into a balloon: the layer touching your fist is VISCERAL (covers the organ); the outer layer is PARIETAL (lines the cavity or body wall).</p></div></article>
+    <div class="axon-card scorebar" aria-live="polite">
+      <div class="axon-legend">
+        <div class="axon-text"><span class="label label-score">Score</span><span class="label final">Final score</span><span class="a"></span></div>
+        <div class="score"><span class="n"></span><small>/10</small></div>
+      </div>
+      <div class="segs"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+    </div>
+  </div>
+  <div class="how"><span>10 questions every day</span><span>True/false: one try</span><span>Other questions: 2 tries (1 point, or ½ on the 2nd try)</span><span>Missed topics come back tomorrow, asked a different way</span></div>
+  <p class="brand">@clipAI</p>
+</div></body></html>
