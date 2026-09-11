@@ -220,3 +220,31 @@ h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(56px, 17v
 .dia-lbl { fill: var(--ink); font-family: var(--f-mono); font-size: 16px; font-weight: 500; text-anchor: middle; }
 .dia-lbl2 { fill: var(--muted); font-family: var(--f-mono); font-size: 12px; text-anchor: middle; }
 .dia-cap { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; text-anchor: middle; }
+
+/* ── the 2-minute clock on the question he is on ── */
+.timer { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; background: var(--ground); border: 1px solid var(--line); }
+.t-label { font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.t-val { font-family: var(--f-mono); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink); }
+.timer.low { border-color: var(--bad); background: var(--bad-tint); }
+.timer.low .t-val { color: var(--bad); animation: tpulse 1s ease-in-out infinite; }
+.timer.low .t-label { color: var(--bad); }
+@keyframes tpulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .timer.low .t-val { animation: none; } }
+
+/* ── questions that are not his turn yet ── */
+.q.locked { opacity: .5; padding: 14px 18px; gap: 8px; border-style: dashed; }
+.chip.lock { border-color: transparent; background: var(--seg-empty); }
+.lock-note { margin: 0; font-size: 16px; color: var(--muted); }
+
+/* ── low score: study these, then the test reopens ── */
+.study { background: var(--ground); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; }
+.study-h { font-family: var(--f-display); font-weight: 800; font-size: 21px; line-height: 1.2; color: var(--violet); }
+.study-list { margin: 0; padding-left: 20px; display: grid; gap: 12px; }
+.study-list li { font-size: 17px; }
+.study-list li b { display: block; color: var(--ink); font-size: 18px; }
+.study-list li span { display: block; color: var(--muted); margin-top: 2px; }
+.retake { display: grid; gap: 8px; }
+.retake .small { color: var(--muted); font-size: 16px; }
+.btn:disabled { border-color: var(--line); background: var(--seg-empty); color: var(--muted); cursor: default; }
+.btn:disabled span { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.summary .small { font-size: 16px; color: var(--muted); }

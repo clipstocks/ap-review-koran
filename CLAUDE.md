@@ -18,6 +18,9 @@ A&P Chapter 1: Introduction to Anatomy & Physiology (source photos in `docs/stud
   - Correct on 2nd try: ½ point.
   - Wrong twice: 0 points, show correct answer + simple explanation.
 - Every concept missed on the 1st try comes back the next day with a **different variant** (marked "Review").
+- **One question at a time.** Only the current question is answerable; the ones after it render as locked stubs. He cannot skip ahead or work out of order.
+- **2 minutes per question** (`Q_SECONDS` in config.js). One clock per question covering **both tries** — a wrong 1st try does not reset it. The clock **pauses** when the app is hidden or closed and resumes on the same question (elapsed ms in localStorage, key `<STORAGE_KEY>:t:<date>:<attempt>:<idx>`). Time out = "Time's up", 0 points, show correct answer + explanation, concept comes back tomorrow as Review. Recorded as `timeout:true`.
+- **Retake on a bad day.** When a finished attempt scores **≤ `RETAKE_MAX_SCORE`** (2/10), the summary lists every missed concept **with its explanation** to study, and a retake unlocks **`RETAKE_WAIT_MIN` minutes later** (60) with a live countdown. The retake is built with `buildDay(tomorrow)` so the questions are **different variants** of the same concepts. It is stored in `day.retakes[]` and **never changes the official score** — the first attempt of the day is always the one that counts, in the app and in the Sheet.
 - Explanations: short, simple, middle-school level.
 - Design: "Koran" big at the **top center**; sticky score card at the top that says **"Final score"** when done; **always dark theme**; big text/buttons for phones; small **@clipAI** at the very bottom.
 
@@ -25,19 +28,25 @@ A&P Chapter 1: Introduction to Anatomy & Physiology (source photos in `docs/stud
 ```
 index.html                 page shell
 css/styles.css             styles (dark tokens in :root)
-js/config.js               STUDENT, CHAPTER, SHEETS_URL, STORAGE_KEY  ← edit this, not app.js
+js/config.js               STUDENT, CHAPTER, SHEETS_URL, STORAGE_KEY,
+                           Q_SECONDS, RETAKE_MAX_SCORE, RETAKE_WAIT_MIN  ← edit this, not app.js
 js/bank.js                 TOPICS, BANK, drawImg()   (mc/scn: correct option FIRST; tf: a=true/false; multi: a=[indices])
 js/app.js                  day builder, 2-try logic, results tab, storage adapters (localStore, sheetsStore, dbStore)
 apps-script/Code.gs        Google Apps Script backend (doGet/doPost), readable sheets, daily emails
 tools/build-question-bank.js   node → docs/question-bank.html (print to PDF)
+tools/test-dashboard.js        `npm i jsdom && node tools/test-dashboard.js` — drives the real page
+                               headless: sequential lock, 2-min clock, time-out, retake gate,
+                               official-score protection, Google Sheets payload. Run after touching app.js.
 docs/                      question-bank.pdf, study-guide photos, preview-no-js.html
 ```
 
 ## Storage
 - `SHEETS_URL` empty → results stay in the phone's localStorage.
 - `SHEETS_URL` set → `sheetsStore`: GET `?op=list` / `?op=get&date=YYYY-MM-DD`; POST (Content-Type `text/plain` to avoid CORS preflight) `{op:"set", date, student, day, readable}`. localStorage is a cache; failed saves retry on the next answer.
-- Day doc: `{date, student, items:[{c,v,review}], answers:{"0":{first,firstOk,pick,ok,tries,final,pts,at}}, score, done, doneAt}`.
-- Sheets written by Code.gs: `Days` (raw JSON), `Answers` (one row per question with 1st/2nd try), `Daily summary`, `Totals` (formulas).
+- Day doc: `{date, student, items:[{c,v,review}], answers:{"0":{first,firstOk,pick,ok,tries,final,pts,timeout,at}}, score, done, doneAt, retakes:[{items,answers,score,done,doneAt,seed}]}`.
+  - `today` = the official attempt, never overwritten. `att()` in app.js returns the attempt on screen (last retake, else official). `scoreOf(today)`, `history()` and the Sheet summary always read the official one.
+  - Retake saves patch the **whole `retakes` array** (`localStore.patch` only deep-merges `answers`).
+- Sheets written by Code.gs: `Days` (raw JSON), `Answers` (one row per question, with an `attempt` column: `official` / `practice N`), `Daily summary` (has a `practice rounds` column — keep it before `updated` so the `Totals` formulas on columns D/F/G keep working), `Totals` (formulas).
 
 ## Deployment checklist (do these with Irene, step by step, in Spanish)
 1. `git init`, commit, create a GitHub repo (public is required for free GitHub Pages), push, enable Pages (branch `main`, root). Test the link on a phone.

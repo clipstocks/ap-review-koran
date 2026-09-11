@@ -107,18 +107,20 @@ function saveDay_(day) {
 
 /* ───────── readable sheets for Irene ───────── */
 function writeReadable_(r) {
-  const ans = sheet_(ANSWERS, ['date', '#', 'topic', 'concept', 'type', 'question', '1st try', '2nd try', 'correct answer', 'result', 'points', 'review?']);
+  const ans = sheet_(ANSWERS, ['date', 'attempt', '#', 'topic', 'concept', 'type', 'question', '1st try', '2nd try', 'correct answer', 'result', 'points', 'review?']);
   // remove this date's old rows, then write the current ones
   const last = ans.getLastRow();
   if (last >= 2) {
     const dates = ans.getRange(2, 1, last - 1, 1).getDisplayValues();
     for (let i = dates.length - 1; i >= 0; i--) if (dates[i][0] === r.date) ans.deleteRow(i + 2);
   }
-  const rows = (r.rows || []).map(x => [r.date, x.n, x.topic, x.concept, x.type, x.question, x.first, x.second, x.correct, x.result, x.points, x.review ? 'yes' : '']);
+  const rows = (r.rows || []).map(x => [r.date, x.attempt || 'official', x.n, x.topic, x.concept, x.type, x.question, x.first, x.second, x.correct, x.result, x.points, x.review ? 'yes' : '']);
   if (rows.length) ans.getRange(ans.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
 
-  const sum = sheet_(SUMMARY, ['date', 'student', 'chapter', 'score', 'out of', 'answered', 'completed', 'updated']);
-  const vals = [r.date, r.student, r.chapter, r.score, r.total, r.answered, r.done ? 'yes' : 'no', new Date()];
+  // 'practice rounds' goes before 'updated' so the Totals formulas (columns D, F, G) keep working
+  const sum = sheet_(SUMMARY, ['date', 'student', 'chapter', 'score', 'out of', 'answered', 'completed', 'practice rounds', 'updated']);
+  const prac = (r.practice || []).map(p => '#' + p.n + ' ' + p.score + '/' + r.total).join(' · ');
+  const vals = [r.date, r.student, r.chapter, r.score, r.total, r.answered, r.done ? 'yes' : 'no', prac, new Date()];
   const row = findRow_(sum, r.date);
   if (row < 0) sum.appendRow(vals); else sum.getRange(row, 1, 1, vals.length).setValues([vals]);
 

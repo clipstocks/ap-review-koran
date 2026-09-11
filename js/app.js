@@ -7,6 +7,10 @@ const CHAPTER = CFG.CHAPTER || "A&P Chapter 1";
 const SHEETS_URL = CFG.SHEETS_URL || "";
 const KEY_PREFIX = CFG.STORAGE_KEY || "ap-ch1-koran";
 const PER_DAY = 10;
+const Q_SECONDS = Number(CFG.Q_SECONDS) > 0 ? Number(CFG.Q_SECONDS) : 120;
+const RETAKE_MAX_SCORE = CFG.RETAKE_MAX_SCORE !== undefined ? Number(CFG.RETAKE_MAX_SCORE) : 2;
+const RETAKE_WAIT_MS = (Number(CFG.RETAKE_WAIT_MIN) >= 0 ? Number(CFG.RETAKE_WAIT_MIN) : 60) * 60000;
+const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const TYPE_LABEL = { mc: "Multiple choice", scn: "Analyze the case", tf: "True or false", multi: "Select all" };
 const byId = Object.fromEntries(BANK.map(c => [c.id, c]));
 const $ = s => document.querySelector(s);
@@ -120,27 +124,48 @@ function sheetsStore(url) {
 }
 
 /* one readable row per question, for the Google Sheet */
-function readableOf(d) {
-  const rows = (d.items || []).map((it, i) => {
-    const vw = viewOf(d, i), a = (d.answers || {})[i];
+function rowsOf(a0, label) {
+  return (a0.items || []).map((it, i) => {
+    const vw = viewOf(a0, i), a = (a0.answers || {})[i];
     if (!vw) return null;
     const txt = arr => (arr || []).map(x => optText(vw, x)).join(" · ");
     const fin = isFinal(a);
     return {
+      attempt: label,
       n: i + 1, topic: TOPICS[vw.c.t], concept: vw.c.name, type: TYPE_LABEL[vw.type], question: vw.v.q,
-      first: a ? txt(a.first) : "", second: a && a.tries === 2 ? txt(a.pick) : "",
-      correct: txt(vw.correct), result: !fin ? (a ? "in progress" : "") : a.ok ? (a.tries === 2 ? "correct (2nd try)" : "correct") : "incorrect",
+      first: a ? (a.timeout && a.tries === 1 ? "—" : txt(a.first)) : "",
+      second: a && a.tries === 2 ? (a.timeout ? "—" : txt(a.pick)) : "",
+      correct: txt(vw.correct),
+      result: !fin ? (a ? "in progress" : "") : a.timeout ? "time's up" : a.ok ? (a.tries === 2 ? "correct (2nd try)" : "correct") : "incorrect",
       points: fin ? (a.pts !== undefined ? a.pts : (a.ok ? 1 : 0)) : "", review: !!it.review
     };
   }).filter(Boolean);
-  return { student: STUDENT, chapter: CHAPTER, date: d.date, score: scoreOf(d), answered: finalCount(d), total: (d.items || []).length, done: !!d.done, rows };
+}
+
+function readableOf(d) {
+  // the official attempt first, then any practice rounds — same date, marked by the attempt column
+  let rows = rowsOf(d, "official");
+  (d.retakes || []).forEach((r, n) => { rows = rows.concat(rowsOf({ ...r, date: d.date }, "practice " + (n + 1))); });
+  const practice = (d.retakes || []).map((r, n) => ({ n: n + 1, score: scoreOf(r), done: !!r.done }));
+  return {
+    student: STUDENT, chapter: CHAPTER, date: d.date,
+    score: scoreOf(d), answered: finalCount(d), total: (d.items || []).length, done: !!d.done,
+    practice, rows
+  };
 }
 
 let store = null;
 let allDays = [];
-let today = null;       // today's day document
+let today = null;       // today's day document (the OFFICIAL attempt — never overwritten by a retake)
 let todayK = dayKey();
 const picks = {};       // idx -> picked option indices not yet checked
+
+/* ───────── attempts ─────────
+   today            = the official attempt. Its score is the one that counts, always.
+   today.retakes[]  = extra practice rounds, each with its own items/answers/score.
+   att()            = the attempt on screen right now (the last retake, or the official one). */
+const att = () => (today && today.retakes && today.retakes.length) ? today.retakes[today.retakes.length - 1] : today;
+const attNo = () => (today && today.retakes) ? today.retakes.length : 0;
 
 /* ───────── answers ─────────
    answers[idx] = { first:[..], firstOk, pick:[..], ok, tries:1|2, final, pts, at } */
@@ -196,38 +221,109 @@ function viewOf(day, idx) {
   const it = day.items[idx], c = byId[it.c], v = c && c.v[it.v];
   if (!v) return null;
   if (v.t === "tf") return { c, v, it, type: "tf", opts: [{ i: 0, text: "True" }, { i: 1, text: "False" }], correct: [v.a ? 0 : 1] };
-  const opts = shuffle(v.o.map((text, i) => ({ i, text })), rng(day.date + ":" + idx + ":" + it.c));
+  const opts = shuffle(v.o.map((text, i) => ({ i, text })), rng((day.seed || day.date) + ":" + idx + ":" + it.c));
   return { c, v, it, type: v.t, opts, correct: v.t === "multi" ? v.a.slice() : [0] };
 }
 const optText = (vw, i) => vw.type === "tf" ? (i === 0 ? "True" : "False") : vw.v.o[i];
 const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
 
+/* ───────── the 2-minute clock ─────────
+   One clock per question, covering BOTH tries. It pauses when the app is closed or hidden and
+   picks up where it left off, on the same question. Elapsed time lives in localStorage, not in
+   the day document: pausing must be instant and must not depend on the network. */
+const timer = { idx: -1, startedAt: 0, iv: null };
+const timerKey = idx => `${KEY_PREFIX}:t:${todayK}:${attNo()}:${idx}`;
+function timerElapsed(idx) {
+  try { return Math.max(0, Number(localStorage.getItem(timerKey(idx))) || 0); } catch (e) { return 0; }
+}
+function timerSave() {
+  if (timer.idx < 0) return;
+  try { localStorage.setItem(timerKey(timer.idx), String(Date.now() - timer.startedAt)); } catch (e) {}
+}
+function timerClear(idx) { try { localStorage.removeItem(timerKey(idx)); } catch (e) {} }
+function timerPause() {
+  timerSave();
+  if (timer.iv) { clearInterval(timer.iv); timer.iv = null; }
+}
+function timerStop() { timerPause(); timer.idx = -1; }
+
+/* the question he is on: the first one not finished yet */
+function activeIdx() {
+  const a = att();
+  if (!a || a.done) return -1;
+  return a.items.findIndex((_, i) => !isFinal(a.answers[i]));
+}
+
+function timerSync() {
+  const idx = activeIdx();
+  if (idx < 0) { timerStop(); return; }
+  if (timer.idx === idx && timer.iv) return;      // already ticking on this question
+  timerPause();
+  timer.idx = idx;
+  timer.startedAt = Date.now() - timerElapsed(idx);
+  timer.iv = setInterval(timerTick, 250);
+  timerTick();
+}
+
+function timerTick() {
+  if (timer.idx < 0) return;
+  const left = Q_SECONDS * 1000 - (Date.now() - timer.startedAt);
+  const el = document.getElementById(`q${timer.idx}-timer`);
+  if (el) {
+    el.textContent = mmss(left);
+    el.parentElement.classList.toggle("low", left <= 30000);
+  }
+  if (left <= 0) { const i = timer.idx; timerPause(); timer.idx = -1; onTimeout(i); }
+}
+
+/* time ran out: the question closes as incorrect, with the answer and the explanation shown */
+function onTimeout(idx) {
+  const a = att();
+  if (!a || isFinal(a.answers[idx])) return;
+  const prev = a.answers[idx];
+  delete picks[idx];
+  finalize(idx, {
+    first: prev ? prev.first : [], firstOk: false, pick: [], ok: false,
+    tries: prev ? 2 : 1, final: true, pts: 0, timeout: true, at: new Date().toISOString()
+  });
+}
+
 /* ───────── axon progress ───────── */
 function renderAxon() {
   const box = $("#segs");
-  const firstOpen = today ? today.items.findIndex((_, i) => !isFinal(today.answers[i])) : -1;
+  const a0 = att();
+  const firstOpen = activeIdx();
   let s = "";
   for (let i = 0; i < PER_DAY; i++) {
-    const a = today && today.answers[i];
+    const a = a0 && a0.answers[i];
     const fin = isFinal(a);
     const cls = fin ? (a.pts === 0.5 ? "half" : a.ok ? "ok" : "bad") : (i === firstOpen ? "now" : "");
     s += `<span class="seg ${cls}">${i + 1}</span>`;
   }
   box.innerHTML = s;
-  $("#score").innerHTML = `${pts(today ? scoreOf(today) : 0)}<small>/${PER_DAY}</small>`;
-  $("#status").innerHTML = !today ? "Getting your questions ready…"
-    : today.done ? `<b>All ${PER_DAY} answered</b> · come back tomorrow`
-    : `<b>${finalCount(today)} of ${PER_DAY}</b> answered`;
-  $("#score-label").textContent = today && today.done ? "Final score" : "Score";
-  $("#axon-card").classList.toggle("final", !!(today && today.done));
+  const retake = attNo() > 0;
+  $("#score").innerHTML = `${pts(a0 ? scoreOf(a0) : 0)}<small>/${PER_DAY}</small>`;
+  $("#status").innerHTML = !a0 ? "Getting your questions ready…"
+    : a0.done ? (retake ? `<b>Practice round finished</b>` : `<b>All ${PER_DAY} answered</b> · come back tomorrow`)
+    : `<b>${finalCount(a0)} of ${PER_DAY}</b> answered${retake ? " · practice round" : ""}`;
+  $("#score-label").textContent = !a0 ? "Score" : retake ? (a0.done ? "Practice score" : "Practice") : a0.done ? "Final score" : "Score";
+  $("#axon-card").classList.toggle("final", !!(a0 && a0.done));
 }
 
 /* ───────── question cards ───────── */
 function cardHTML(idx) {
-  const vw = viewOf(today, idx);
+  const a0 = att();
+  const vw = viewOf(a0, idx);
   if (!vw) return "";
-  const ans = today.answers[idx];
+  const ans = a0.answers[idx];
   const fin = isFinal(ans);
+  const active = activeIdx();
+  // one question at a time: everything after the current one stays shut
+  if (!fin && active >= 0 && idx !== active) {
+    return `<article class="q locked" id="q${idx}"><div class="q-head"><span class="q-num">Question ${idx + 1} of ${PER_DAY}</span>`
+      + `<span class="chip lock">Locked</span></div>`
+      + `<p class="lock-note">Answer question ${active + 1} first.</p></article>`;
+  }
   const retry = ans && !fin;                 // first try was wrong, second try pending
   const multi = vw.type === "multi";
   const pick = fin ? ans.pick : (picks[idx] || []);
@@ -237,6 +333,8 @@ function cardHTML(idx) {
   h += `<div class="q-head"><span class="q-num">Question ${idx + 1} of ${PER_DAY}</span>`;
   if (vw.it.review) h += `<span class="chip review">Review</span>`;
   h += `<span class="chip">${TYPE_LABEL[vw.type]}</span></div>`;
+  if (!fin) h += `<div class="timer"><span class="t-label">Time left</span>`
+    + `<span class="t-val" id="q${idx}-timer">${mmss(Q_SECONDS * 1000 - timerElapsed(idx))}</span></div>`;
   h += `<div class="q-topic">${esc(TOPICS[vw.c.t])}</div>`;
   if (vw.v.img) h += `<div class="figure">${drawImg(vw.v.img)}</div>`;
   h += `<p class="q-text">${esc(vw.v.q)}</p>`;
@@ -269,7 +367,10 @@ function cardHTML(idx) {
     h += `<div class="fb ok"><div class="fb-title"><span class="mark" aria-hidden="true">✓</span>Correct! +1 point</div>`;
     h += `<details><summary>See explanation</summary><p>${esc(vw.c.ex)}</p></details></div>`;
   } else {
-    h += `<div class="fb bad"><div class="fb-title"><span class="mark" aria-hidden="true">✕</span>Incorrect${ans.tries === 1 ? "" : " · 0 points"}</div>`;
+    const late = ans.timeout;
+    h += `<div class="fb bad"><div class="fb-title"><span class="mark" aria-hidden="true">${late ? "⏱" : "✕"}</span>`;
+    h += late ? `Time's up · 0 points</div><p>The ${Math.round(Q_SECONDS / 60)} minutes ran out, so this one closed.</p>`
+              : `Incorrect${ans.tries === 1 ? "" : " · 0 points"}</div>`;
     h += `<p class="answer">Correct answer: <b>${esc(vw.correct.map(i => optText(vw, i)).join(" · "))}</b></p>`;
     h += `<p class="why">${esc(vw.c.ex)}</p>`;
     h += `<p class="later">This question comes back tomorrow in a different way.</p></div>`;
@@ -280,9 +381,11 @@ function cardHTML(idx) {
 function renderToday() {
   $("#dateline").textContent = fmt(todayK);
   renderAxon();
-  if (!today) return;
-  $("#questions").innerHTML = today.items.map((_, i) => cardHTML(i)).join("");
+  if (!today) { timerStop(); return; }
+  const a0 = att();
+  $("#questions").innerHTML = a0.items.map((_, i) => cardHTML(i)).join("");
   renderSummary();
+  timerSync();
 }
 
 function reportText(d) {
@@ -292,37 +395,136 @@ function reportText(d) {
     if (!vw || !isFinal(a)) return;
     if (a.ok && a.tries !== 2) t += `\n${i + 1}. ✔ ${vw.c.name}`;
     else if (a.ok) t += `\n${i + 1}. ½ ${vw.c.name} (2nd try; 1st: ${(a.first || []).map(x => optText(vw, x)).join(" · ")})`;
-    else t += `\n${i + 1}. ✘ ${vw.c.name}; answered ${a.pick.map(x => optText(vw, x)).join(" · ")}; correct: ${vw.correct.map(x => optText(vw, x)).join(" · ")}`;
+    else t += `\n${i + 1}. ✘ ${vw.c.name}; ${a.timeout ? "time's up" : "answered " + (a.pick || []).map(x => optText(vw, x)).join(" · ")}; correct: ${vw.correct.map(x => optText(vw, x)).join(" · ")}`;
   });
   return t;
 }
 
+let retakeIv = null;
+const retakeAt = a => (a && a.doneAt ? Date.parse(a.doneAt) : 0) + RETAKE_WAIT_MS;
+
 function renderSummary() {
   const box = $("#summary");
-  if (!today || !today.done) { box.innerHTML = ""; return; }
-  const s = scoreOf(today);
+  const cur = att();
+  if (!cur || !cur.done) { box.innerHTML = ""; if (retakeIv) { clearInterval(retakeIv); retakeIv = null; } return; }
+  const s = scoreOf(cur);
+  const retake = attNo() > 0;
   const head = s === PER_DAY ? "Perfect! Every answer right." : s >= 8 ? "Great job!" : s >= 6 ? "Good work!" : "Nice effort. We'll review these tomorrow.";
-  const missed = today.items.filter((_, i) => !firstOk(today.answers[i])).map(it => byId[it.c].name);
+  // concepts he did not get right on the first try — these are the ones to study
+  const missedC = cur.items.filter((_, i) => !firstOk(cur.answers[i])).map(it => byId[it.c]);
   const text = reportText(today);
-  let h = `<div class="summary"><p class="label">Final score</p><h2>${pts(s)}<small> / ${PER_DAY}</small></h2><p class="msg">${esc(head)}</p>`;
-  h += missed.length
-    ? `<div><p>Coming back tomorrow, asked a different way:</p><ul>${missed.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>`
-    : `<p>Everything right on the first try. Tomorrow brings new topics.</p>`;
+
+  let h = `<div class="summary"><p class="label">${retake ? "Practice score" : "Final score"}</p>`;
+  h += `<h2>${pts(s)}<small> / ${PER_DAY}</small></h2><p class="msg">${esc(head)}</p>`;
+  if (retake) h += `<p class="small">Practice round ${attNo()}. The score that counts for today is still <b>${pts(scoreOf(today))}/${PER_DAY}</b>.</p>`;
+
+  // low score: study the concepts, then the test reopens with different questions
+  const canRetake = s <= RETAKE_MAX_SCORE;
+  if (canRetake && missedC.length) {
+    h += `<div class="study"><p class="study-h">Review these concepts before trying again</p><ul class="study-list">`;
+    missedC.forEach(c => { h += `<li><b>${esc(c.name)}</b><span>${esc(c.ex)}</span></li>`; });
+    h += `</ul></div>`;
+  } else {
+    h += missedC.length
+      ? `<div><p>Coming back tomorrow, asked a different way:</p><ul>${missedC.map(c => `<li>${esc(c.name)}</li>`).join("")}</ul></div>`
+      : `<p>Everything right on the first try. Tomorrow brings new topics.</p>`;
+  }
+
+  if (canRetake) {
+    const left = retakeAt(cur) - Date.now();
+    h += `<div class="retake">`;
+    if (left > 0) {
+      h += `<button type="button" class="btn solid" id="retake" disabled>Retake in <span id="retake-left">${mmss(left)}</span></button>`;
+      h += `<p class="small">Study the concepts above. In <b>${Math.round(RETAKE_WAIT_MS / 60000)} minutes</b> you can take the test again, with different questions.</p>`;
+    } else {
+      h += `<button type="button" class="btn solid" id="retake">Take the test again</button>`;
+      h += `<p class="small">You get different questions on the same concepts. This is extra practice — it does not change today's score.</p>`;
+    }
+    h += `</div>`;
+  }
+
   h += `<div class="share">`;
   h += `<a class="btn solid" id="share-wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Send results on WhatsApp</a>`;
   h += `<a class="btn" id="share-sms" href="sms:?&body=${encodeURIComponent(text)}" target="_blank" rel="noopener">Send results by text message</a>`;
   h += `</div></div>`;
   box.innerHTML = h;
+
+  // keep the "Retake in mm:ss" ticking, and flip the button on by itself when the wait is over
+  if (retakeIv) { clearInterval(retakeIv); retakeIv = null; }
+  if (canRetake && retakeAt(cur) > Date.now()) {
+    retakeIv = setInterval(() => {
+      const el = document.getElementById("retake-left");
+      const ms = retakeAt(att()) - Date.now();
+      if (ms <= 0) { clearInterval(retakeIv); retakeIv = null; renderSummary(); }
+      else if (el) el.textContent = mmss(ms);
+      else { clearInterval(retakeIv); retakeIv = null; }
+    }, 1000);
+  }
+}
+
+/* a fresh practice round: different questions, built as if it were tomorrow so today's
+   misses come back as Review. The official attempt is never touched. */
+async function startRetake() {
+  const cur = att();
+  if (!cur || !cur.done || retakeAt(cur) > Date.now()) return;
+  const d = buildDay(addDays(todayK, 1), allDays);
+  const n = attNo() + 1;
+  const r = { items: d.items, answers: {}, score: 0, done: false, seed: todayK + "#r" + n, date: todayK, startedAt: new Date().toISOString() };
+  today.retakes = (today.retakes || []).concat([r]);
+  Object.keys(picks).forEach(k => delete picks[k]);
+  renderToday();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  try { await store.patch(todayK, { retakes: today.retakes }); }
+  catch (err) { toast("Saved on this phone. It will sync online with your next answer."); }
 }
 
 /* ───────── interactions ───────── */
+/* records an answer (or a time-out), redraws, unlocks the next question and saves */
+async function finalize(idx, ans) {
+  const a0 = att();
+  const retake = attNo() > 0;
+  a0.answers[idx] = ans;
+  a0.score = scoreOf(a0);
+  if (ans.final) timerClear(idx);
+  const justDone = finalCount(a0) === a0.items.length;
+  if (justDone) { a0.done = true; a0.doneAt = ans.at; }
+
+  const card = document.getElementById(`q${idx}`);
+  if (card) card.outerHTML = cardHTML(idx);
+  const nxt = activeIdx();
+  if (nxt >= 0 && nxt !== idx) {
+    const nc = document.getElementById(`q${nxt}`);
+    if (nc) nc.outerHTML = cardHTML(nxt);
+  }
+  renderAxon();
+  renderSummary();
+  timerSync();
+  upsertLocalDay(today);
+
+  const fb = document.querySelector(`#q${idx} .fb`);
+  if (fb) fb.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  if (a0.done) setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 900);
+
+  const patch = retake
+    ? { retakes: today.retakes }
+    : Object.assign({ answers: { [idx]: ans }, score: today.score }, justDone ? { done: true, doneAt: today.doneAt } : {});
+  try { await store.patch(todayK, patch); }
+  catch (err) { toast("Saved on this phone. It will sync online with your next answer."); }
+}
+
+$("#summary").addEventListener("click", e => {
+  if (e.target.closest("#retake")) startRetake();
+});
+
 $("#questions").addEventListener("click", async e => {
   const card = e.target.closest(".q");
   if (!card || !today) return;
+  const a0 = att();
   const idx = Number(card.dataset.idx);
-  const prev = today.answers[idx];
+  if (!Number.isInteger(idx) || idx !== activeIdx()) return;   // only the question he is on
+  const prev = a0.answers[idx];
   if (isFinal(prev)) return;
-  const vw = viewOf(today, idx);
+  const vw = viewOf(a0, idx);
 
   const opt = e.target.closest(".opt");
   if (opt && !opt.disabled) {
@@ -349,23 +551,8 @@ $("#questions").addEventListener("click", async e => {
     if (vw.type === "multi" && same(p, prev.first)) { toast("Change at least one pick before checking again."); return; }
     ans = { first: prev.first, firstOk: false, pick: p, ok, tries: 2, final: true, pts: ok ? 0.5 : 0, at };
   }
-  today.answers[idx] = ans;
-  today.score = scoreOf(today);
-  const patch = { answers: { [idx]: ans }, score: today.score };
-  if (finalCount(today) === today.items.length) {
-    today.done = true; today.doneAt = at;
-    patch.done = true; patch.doneAt = at;
-  }
   if (vw.type === "multi" && !ans.final) picks[idx] = p; else delete picks[idx];
-  card.outerHTML = cardHTML(idx);
-  renderAxon();
-  renderSummary();
-  upsertLocalDay(today);
-  const fb = document.querySelector(`#q${idx} .fb`);
-  if (fb) fb.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  if (today.done) setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 900);
-  try { await store.patch(todayK, patch); }
-  catch (err) { toast("Saved on this phone. It will sync online with your next answer."); }
+  await finalize(idx, ans);
 });
 
 function upsertLocalDay(d) {
@@ -434,13 +621,18 @@ function renderResults() {
   shown.forEach(d => {
     const badge = d.done ? `<span class="badge ${scoreOf(d) <= PER_DAY / 2 ? "low" : ""}">${pts(scoreOf(d))}/${PER_DAY}</span>` : `<span class="badge inc">${finalCount(d)}/${PER_DAY} answered</span>`;
     h += `<details class="day"><summary><span class="dd">${esc(fmt(d.date))}</span>${badge}</summary><div class="rows">`;
+    if ((d.retakes || []).length) {
+      h += `<p class="small">Practice rounds after the test: ${d.retakes.map((r, n) => `#${n + 1} ${pts(scoreOf(r))}/${PER_DAY}`).join(" · ")}. The score above is the real one.</p>`;
+    }
     d.items.forEach((it, i) => {
       const vw = viewOf(d, i), a = d.answers[i];
       if (!vw) return;
       const f = isFinal(a);
-      const mark = !f ? `<span class="ic">–</span>` : (a.ok && a.tries !== 2) ? `<span class="ic y">✓</span>` : a.ok ? `<span class="ic h">½</span>` : `<span class="ic n">✕</span>`;
+      const mark = !f ? `<span class="ic">–</span>` : a.timeout ? `<span class="ic n">⏱</span>`
+        : (a.ok && a.tries !== 2) ? `<span class="ic y">✓</span>` : a.ok ? `<span class="ic h">½</span>` : `<span class="ic n">✕</span>`;
       h += `<div class="drow">${mark}<div><div class="nm">${esc(vw.c.name)}${it.review ? ` <span class="chip review">Review</span>` : ""}</div><div class="qq">${esc(vw.v.q)}</div>`;
-      if (f && a.tries === 2) h += `<div>1st try: ${esc((a.first || []).map(x => optText(vw, x)).join(" · "))}<br>2nd try: ${esc(a.pick.map(x => optText(vw, x)).join(" · "))}${a.ok ? "" : `<br>Correct: <b>${esc(vw.correct.map(x => optText(vw, x)).join(" · "))}</b>`}</div>`;
+      if (f && a.timeout) h += `<div>Ran out of time · Correct: <b>${esc(vw.correct.map(x => optText(vw, x)).join(" · "))}</b></div>`;
+      else if (f && a.tries === 2) h += `<div>1st try: ${esc((a.first || []).map(x => optText(vw, x)).join(" · "))}<br>2nd try: ${esc((a.pick || []).map(x => optText(vw, x)).join(" · "))}${a.ok ? "" : `<br>Correct: <b>${esc(vw.correct.map(x => optText(vw, x)).join(" · "))}</b>`}</div>`;
       h += `</div></div>`;
     });
     h += `</div></details>`;
@@ -474,6 +666,7 @@ async function loadToday() {
     else await store.set(todayK, d);
   }
   d.answers = d.answers || {};
+  d.retakes = (Array.isArray(d.retakes) ? d.retakes : []).filter(r => r && Array.isArray(r.items) && r.items.length);
   today = d;
   upsertLocalDay(today);
   renderToday();
@@ -514,9 +707,13 @@ async function start() {
   if (saved === "results") showTab("results");
 }
 
+/* closing or hiding the app freezes the clock; coming back resumes the same question */
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && store && dayKey() !== todayK) { today = null; renderAxon(); loadToday(); }
+  if (document.hidden) { timerPause(); return; }
+  if (store && dayKey() !== todayK) { timerStop(); today = null; renderAxon(); loadToday(); return; }
+  timerSync();
 });
+window.addEventListener("pagehide", timerPause);
 
 start();
 })();
