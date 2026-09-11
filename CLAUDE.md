@@ -45,7 +45,7 @@ docs/                      question-bank.pdf, study-guide photos, preview-no-js.
 - `SHEETS_URL` set → `sheetsStore`: GET `?op=list` / `?op=get&date=YYYY-MM-DD`; POST (Content-Type `text/plain` to avoid CORS preflight) `{op:"set", date, student, day, readable}`. localStorage is a cache; failed saves retry on the next answer.
 - Day doc: `{date, student, items:[{c,v,review}], answers:{"0":{first,firstOk,pick,ok,tries,final,pts,timeout,at}}, score, done, doneAt, retakes:[{items,answers,score,done,doneAt,seed}]}`.
   - `today` = the official attempt, never overwritten. `att()` in app.js returns the attempt on screen (last retake, else official). `scoreOf(today)`, `history()` and the Sheet summary always read the official one.
-  - Retake saves patch the **whole `retakes` array** (`localStore.patch` only deep-merges `answers`).
+  - Retake saves patch the **whole `retakes` array** (`localStore.patch` only deep-merges `answers`; Code.gs `doPost` `op:"patch"` likewise shallow-merges everything except `answers`, so a whole-array write is the correct shape there too — though `sheetsStore` only ever sends `op:"set"` with the full doc).
 - Sheets written by Code.gs: `Days` (raw JSON), `Answers` (one row per question, with an `attempt` column: `official` / `practice N`), `Daily summary` (has a `practice rounds` column — keep it before `updated` so the `Totals` formulas on columns D/F/G keep working), `Totals` (formulas).
 
 ## Deployment checklist (do these with Irene, step by step, in Spanish)

@@ -467,7 +467,10 @@ function renderSummary() {
 async function startRetake() {
   const cur = att();
   if (!cur || !cur.done || retakeAt(cur) > Date.now()) return;
-  const d = buildDay(addDays(todayK, 1), allDays);
+  // force the in-memory copy of today in: a stale one from store.list() would hide today's
+  // misses, and the retake would come back with fresh concepts instead of Review variants
+  const days = allDays.some(d => d.date === todayK) ? allDays.map(d => d.date === todayK ? today : d) : allDays.concat([today]);
+  const d = buildDay(addDays(todayK, 1), days);
   const n = attNo() + 1;
   const r = { items: d.items, answers: {}, score: 0, done: false, seed: todayK + "#r" + n, date: todayK, startedAt: new Date().toISOString() };
   today.retakes = (today.retakes || []).concat([r]);
