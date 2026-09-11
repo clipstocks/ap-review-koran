@@ -62,8 +62,9 @@ docs/                      question-bank.pdf, study-guide photos, preview-no-js.
 4. WhatsApp via **CallMeBot** (free, personal use; each person activates their OWN number):
    - Koran and Irene each follow https://www.callmebot.com/blog/free-api-whatsapp-messages/ : save the bot number shown there, send it "I allow callmebot to send me messages", receive an apikey.
    - In Apps Script → Project Settings → **Script properties** add: `DASHBOARD_URL`, `STUDENT_WHATSAPP`, `STUDENT_CALLMEBOT_KEY`, `PARENT_WHATSAPP`, `PARENT_CALLMEBOT_KEY` (numbers with country code, e.g. +1787…). Optional: `STUDENT_EMAIL`, `PARENT_EMAIL`. **Never put these in the repo** (it is public).
-   - Run `testWhatsApp()` once (both should get a test message), then run `setupDailyTriggers()` once: 7 AM link to Koran, 6 PM nudge only if unfinished, 8 PM results to Irene (score, incorrect topics, 2nd-try topics, practice rounds, cumulative average).
-   - If CallMeBot activation says the bot is full, wait and retry later; email copies still work meanwhile.
+   - Run `testMessages()` once — it reports which channel each person is set up for and sends through it — then `setupDailyTriggers()` once: 7 AM link to Koran, 6 PM nudge only if unfinished, 8 PM results to Irene (score, incorrect topics, 2nd-try topics, extra rounds, cumulative average).
+   - **CallMeBot is often full** — when it is, the bot's number is not even shown on their page. Email is the fallback and needs no third party: set `PARENT_EMAIL` / `STUDENT_EMAIL` and everything works; add the WhatsApp properties later and both channels fire.
+   - Triggers and menu-run functions execute the **saved editor code**, not the deployed version — only `doGet`/`doPost` (the web app) need a redeploy. So changing the messaging code means re-paste + Ctrl+S, no new deployment.
 5. On Koran's phone: open the link → Share → "Add to Home Screen".
 
 ## New chapter later

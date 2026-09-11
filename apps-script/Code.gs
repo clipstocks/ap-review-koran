@@ -198,7 +198,7 @@ function todaysTopics_(date) {
 
 function sendDailyReminder() {
   const link = prop_('DASHBOARD_URL');
-  toStudent_('Hi ' + CONFIG.STUDENT + '! 📚 Your 10 A&P questions for today are ready:\n' + link,
+  toStudent_('Hi ' + CONFIG.STUDENT + '! 📚 Your 10 A&P questions for today are ready.' + (link ? '\n' + link : ''),
     'Your 10 questions for today are ready');
 }
 
@@ -249,11 +249,24 @@ function totalsLine_() {
 }
 
 /** Run once to check that both WhatsApp numbers receive messages. */
-function testWhatsApp() {
-  const a = sendWhatsApp_(prop_('STUDENT_WHATSAPP'), prop_('STUDENT_CALLMEBOT_KEY'), 'Test ✅ Daily A&P Review is connected to your WhatsApp.');
-  const b = sendWhatsApp_(prop_('PARENT_WHATSAPP'), prop_('PARENT_CALLMEBOT_KEY'), 'Prueba ✅ Recibirás aquí el resultado diario de ' + CONFIG.STUDENT + '.');
-  console.log('Koran: ' + (a ? 'sent' : 'NOT sent — check number/key') + ' · Irene: ' + (b ? 'sent' : 'NOT sent — check number/key'));
+function testMessages() {
+  const how = (wa, key, mail) => {
+    const ch = [];
+    if (prop_(wa) && prop_(key)) ch.push('WhatsApp');
+    if (prop_(mail)) ch.push('email ' + prop_(mail));
+    return ch.length ? ch.join(' + ') : 'NOTHING set up';
+  };
+  const s = how('STUDENT_WHATSAPP', 'STUDENT_CALLMEBOT_KEY', 'STUDENT_EMAIL');
+  const p = how('PARENT_WHATSAPP', 'PARENT_CALLMEBOT_KEY', 'PARENT_EMAIL');
+  if (s !== 'NOTHING set up') toStudent_('Test ✅ Daily A&P Review is connected.', 'Daily A&P Review — test');
+  if (p !== 'NOTHING set up') toParent_('Prueba ✅ Aquí recibirás el resultado diario de ' + CONFIG.STUDENT + '.', 'Resultado diario de ' + CONFIG.STUDENT + ' — prueba');
+  console.log(CONFIG.STUDENT + ' → ' + s);
+  console.log('Parent  → ' + p);
+  if (!prop_('DASHBOARD_URL')) console.warn('DASHBOARD_URL is empty — the daily messages will go out without the link.');
 }
+
+/** Old name, kept so nothing breaks. */
+function testWhatsApp() { testMessages(); }
 
 /** Run once from the editor to install the daily messages. */
 function setupDailyTriggers() {
