@@ -10,6 +10,8 @@ const PER_DAY = 10;
 const Q_SECONDS = Number(CFG.Q_SECONDS) > 0 ? Number(CFG.Q_SECONDS) : 120;
 const RETAKE_WAIT_MS = (Number(CFG.RETAKE_WAIT_MIN) >= 0 ? Number(CFG.RETAKE_WAIT_MIN) : 0) * 60000;
 const MAX_ATTEMPTS = Number(CFG.MAX_ATTEMPTS) > 0 ? Number(CFG.MAX_ATTEMPTS) : 20;
+// shown next to @clipAI so a stale phone can be spotted at a glance — keep it equal to the ?v= in index.html
+const APP_VERSION = "v8";
 const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
 const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const TYPE_LABEL = { mc: "Multiple choice", scn: "Analyze the case", tf: "True or false", multi: "Select all" };
@@ -318,6 +320,7 @@ function renderAxon() {
     : `<b>${finalCount(a0)} of ${PER_DAY}</b> answered${n > 1 ? ` · round ${n}` : ""}`;
   $("#score-label").textContent = !a0 ? "Score" : n > 1 ? ordinal(n) + " round" : a0.done ? "Final score" : "Score";
   $("#axon-card").classList.toggle("final", !!(a0 && a0.done));
+  renderActions();
 }
 
 /* ───────── question cards ───────── */
@@ -470,11 +473,31 @@ function renderSummary() {
   }
 }
 
-/* a fresh practice round: different questions, built as if it were tomorrow so today's
-   misses come back as Review. The official attempt is never touched. */
-async function startRetake() {
+/* the Start over / Take it again button, kept in view instead of buried under the summary */
+function renderActions() {
+  const box = $("#actions");
+  if (!box) return;
   const cur = att();
-  if (!cur || !cur.done || retakeAt(cur) > Date.now() || attNo() + 1 >= MAX_ATTEMPTS) return;
+  if (!cur || !finalCount(cur) || attNo() + 1 >= MAX_ATTEMPTS) { box.innerHTML = ""; return; }
+  if (cur.done && retakeAt(cur) > Date.now()) { box.innerHTML = ""; return; }  // summary shows the countdown
+  box.innerHTML = `<button type="button" class="btn ghost" id="startover">`
+    + (cur.done ? "Take the test again" : "Start over with new questions") + `</button>`;
+}
+
+$("#actions").addEventListener("click", e => {
+  if (!e.target.closest("#startover")) return;
+  const cur = att();
+  if (cur && !cur.done &&
+      !window.confirm("Start over?\n\nThe " + finalCount(cur) + " you already answered stay saved, and you get 10 new questions.")) return;
+  newRound();
+});
+
+/* a fresh round: different questions, built as if it were tomorrow so today's misses come back
+   as Review. Whatever came before is kept exactly as it was — nothing is ever overwritten. */
+async function newRound() {
+  const cur = att();
+  if (!cur || attNo() + 1 >= MAX_ATTEMPTS) return;
+  if (cur.done && retakeAt(cur) > Date.now()) return;   // the cool-off knob, when one is set
   // force the in-memory copy of today in: a stale one from store.list() would hide today's
   // misses, and the retake would come back with fresh concepts instead of Review variants
   const days = allDays.some(d => d.date === todayK) ? allDays.map(d => d.date === todayK ? today : d) : allDays.concat([today]);
@@ -524,7 +547,7 @@ async function finalize(idx, ans) {
 }
 
 $("#summary").addEventListener("click", e => {
-  if (e.target.closest("#retake")) startRetake();
+  if (e.target.closest("#retake")) newRound();
 });
 
 $("#questions").addEventListener("click", async e => {
@@ -687,6 +710,7 @@ async function loadToday() {
 
 async function start() {
   const nj = document.getElementById("nojs"); if (nj) nj.remove();
+  const vEl = $("#ver"); if (vEl) vEl.textContent = " · " + APP_VERSION;
   $("#dateline").textContent = fmt(todayK);
   renderAxon();
   let db = null;

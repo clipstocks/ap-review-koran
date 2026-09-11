@@ -26,6 +26,10 @@ A&P Chapter 1: Introduction to Anatomy & Physiology (source photos in `docs/stud
   - `RETAKE_WAIT_MIN` (0) is still there as a knob if a cool-off is ever wanted again; it renders a live countdown on the button.
   - `MAX_ATTEMPTS` (20) is a **safety cap, not a rule**: the whole day — every round — is stored as JSON in one Google Sheets cell, and a cell holds 50,000 characters (≈30 rounds). Do not raise it past ~25 without moving the day doc off a single cell.
 - Missed concepts are listed **with their explanation** in the summary whenever he got something wrong, so he can study before going again.
+- **"Start over" button** under the score card (`#actions`), shown as soon as the current round has one answer. Mid-round it confirms first, then starts a new round — the abandoned round is kept exactly as it was, unfinished, so the Sheet shows the truth if he bails out of a hard question.
+
+## Cache
+`index.html` loads `css/` and `js/` with `?v=N`, and `APP_VERSION` in app.js matches that N (a test enforces it). **Bump both on every deploy that touches js/ or css/.** GitHub Pages sends `max-age=600`, but a phone — a home-screen app above all — will happily run a stale `app.js` for far longer, which means stale *rules*. The version shows next to @clipAI so a stale phone can be spotted by asking what it says.
 - Explanations: short, simple, middle-school level.
 - Design: "Koran" big at the **top center**; sticky score card at the top that says **"Final score"** when done; **always dark theme**; big text/buttons for phones; small **@clipAI** at the very bottom.
 

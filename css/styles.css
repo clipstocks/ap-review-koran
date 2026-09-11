@@ -248,3 +248,10 @@ h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(56px, 17v
 .btn:disabled { border-color: var(--line); background: var(--seg-empty); color: var(--muted); cursor: default; }
 .btn:disabled span { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 .summary .small { font-size: 16px; color: var(--muted); }
+
+/* ── Start over / Take it again, kept in view under the score card ── */
+#actions:empty { display: none; }
+#actions { display: grid; }
+.btn.ghost { min-height: 48px; font-size: 17px; border-color: var(--line); color: var(--muted); background: transparent; }
+.btn.ghost:active { border-color: var(--blue); color: var(--blue); }
+.brand #ver { color: var(--line); font-size: 11px; }

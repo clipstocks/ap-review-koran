@@ -10,7 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="css/styles.css">
+  <!-- ?v= is bumped on every deploy: phones (and home-screen apps especially) hold on to the
+       old files otherwise, and a stale app.js means stale rules. Bump it when you change js/ or css/. -->
+  <link rel="stylesheet" href="css/styles.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -33,6 +35,7 @@
       </div>
       <div class="segs" id="segs" aria-label="Today's progress"></div>
     </div>
+    <div id="actions"></div>
     <p class="nojs" id="nojs">This preview only shows the questions. To answer them, open the file in Safari or Chrome.</p>
     <div id="summary"></div>
     <div id="questions"><div class="loading">Getting your questions ready…</div></div>
@@ -51,10 +54,10 @@
   </section>
 
   <p class="foot" id="storeNote"></p>
-  <p class="brand">@clipAI</p>
+  <p class="brand">@clipAI<span id="ver"></span></p>
 </div>
-<script src="js/config.js"></script>
-<script src="js/bank.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=8"></script>
+<script src="js/bank.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>

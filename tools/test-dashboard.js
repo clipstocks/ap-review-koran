@@ -35,7 +35,8 @@ async function boot(over) {
   const inline = [
     read("js/config.js"),
     `Object.assign(window.APP_CONFIG, ${JSON.stringify(Object.assign({ Q_SECONDS, RETAKE_WAIT_MIN }, over || {}))});`,
-    `Element.prototype.scrollIntoView = function(){}; window.scrollTo = function(){};`,
+    `Element.prototype.scrollIntoView = function(){}; window.scrollTo = function(){};
+     window.__confirms = 0; window.confirm = function(){ window.__confirms++; return true; };`,
     (over && over.seedDays) ? `localStorage.setItem("ap-ch1-koran:days", ${JSON.stringify(JSON.stringify(over.seedDays))});` : "",
     // fake Apps Script endpoint: records every payload the app would send to Google Sheets
     `window.__posts = [];
@@ -268,6 +269,39 @@ async function answer(w, i, items, right) {
   await tick(120);
   ok(/Final score|All 10 answered/.test(w8.document.body.textContent), "con el servidor caido sigue mostrando lo guardado");
   ok(dayDoc(w8).score === 10, "las contestaciones siguen intactas en el telefono");
+
+  console.log("\n=== 14. El boton de resetear, siempre a la vista ===");
+  const w9 = await boot({ Q_SECONDS: 600 });
+  const it9 = dayDoc(w9).items;
+  ok(!w9.document.getElementById("startover"), "sin contestar nada, no aparece (no hay nada que resetear)");
+  await answer(w9, 0, it9, true);
+  const sb = w9.document.getElementById("startover");
+  ok(!!sb, "al contestar 1, ya aparece el boton");
+  ok(/Start over/.test(sb.textContent), "a mitad dice 'Start over' (" + sb.textContent.trim() + ")");
+  ok(w9.document.getElementById("actions").contains(sb), "esta arriba, junto a la puntuacion, no al final");
+
+  console.log("\n=== 15. Resetear a mitad: no se pierde nada ===");
+  await answer(w9, 1, it9, true);
+  const antes = dayDoc(w9);
+  ok(Object.keys(antes.answers).length === 2, "van 2 contestadas en la vuelta 1");
+  await click(w9, "#startover");
+  await tick(40);
+  ok(w9.__confirms === 1, "pregunta antes de resetear");
+  const desp = dayDoc(w9);
+  ok((desp.retakes || []).length === 1, "arranca una vuelta nueva");
+  ok(Object.keys(desp.answers).length === 2, "las 2 de la vuelta 1 siguen guardadas");
+  ok(desp.done !== true, "la vuelta 1 queda marcada como no terminada (honesto)");
+  ok(Object.keys(desp.retakes[0].answers).length === 0, "la vuelta nueva arranca en blanco");
+  ok(!isLocked(w9, 0), "y arranca en la pregunta 1");
+  const sb2 = w9.document.getElementById("startover");
+  ok(!sb2, "en la vuelta nueva sin contestar, el boton desaparece otra vez");
+
+  console.log("\n=== 16. La version se ve en la pagina ===");
+  ok(/v\d+/.test(w9.document.getElementById("ver").textContent), "muestra la version abajo (" + w9.document.getElementById("ver").textContent.trim() + ")");
+  const idx = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const vHtml = (idx.match(/app\.js\?v=(\d+)/) || [])[1];
+  const vJs = (fs.readFileSync(path.join(ROOT, "js/app.js"), "utf8").match(/APP_VERSION = "v(\d+)"/) || [])[1];
+  ok(vHtml && vHtml === vJs, "el ?v= del index y el APP_VERSION de app.js coinciden (" + vHtml + " vs " + vJs + ")");
 
   console.log(`\n──────── ${pass} pasaron · ${fail} fallaron ────────`);
   process.exit(fail ? 1 : 0);
