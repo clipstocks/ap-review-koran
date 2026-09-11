@@ -104,7 +104,16 @@ function sheetsStore(url) {
       let remote;
       try { remote = await getJSON({ op: "get", date: k, student: STUDENT }); } catch (e) { return cache.get(k); }
       const local = await cache.get(k);
-      if (local && (!remote || Object.keys(local.answers || {}).length > Object.keys(remote.answers || {}).length)) { dirty.add(k); return local; }
+      // how much work a copy holds, retakes included
+      const rich = d => Object.keys(d.answers || {}).length +
+        (d.retakes || []).reduce((s, r) => s + Object.keys(r.answers || {}).length, 0);
+      if (local && (!remote || rich(local) > rich(remote))) {
+        dirty.add(k);
+        // push it now: a day answered before the sheet was connected — or while it was down —
+        // would otherwise wait for the next answer, and a finished day has none left to give
+        flush().catch(() => {});
+        return local;
+      }
       if (remote) await cache.set(k, remote);
       return remote;
     },

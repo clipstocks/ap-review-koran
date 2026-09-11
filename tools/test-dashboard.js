@@ -36,9 +36,12 @@ async function boot(over) {
     read("js/config.js"),
     `Object.assign(window.APP_CONFIG, ${JSON.stringify(Object.assign({ Q_SECONDS, RETAKE_WAIT_MIN }, over || {}))});`,
     `Element.prototype.scrollIntoView = function(){}; window.scrollTo = function(){};`,
+    (over && over.seedDays) ? `localStorage.setItem("ap-ch1-koran:days", ${JSON.stringify(JSON.stringify(over.seedDays))});` : "",
     // fake Apps Script endpoint: records every payload the app would send to Google Sheets
     `window.__posts = [];
+     window.__fail = ${(over && over.failFetch) ? "true" : "false"};
      window.fetch = async function(u, o) {
+       if (window.__fail) throw new Error("network down");
        if (o && o.method === "POST") { window.__posts.push(JSON.parse(o.body)); return { ok: true, json: async () => ({ ok: true }) }; }
        if (String(u).includes("op=get")) return { ok: true, json: async () => null };
        return { ok: true, json: async () => [] };
@@ -213,6 +216,28 @@ async function answer(w, i, items, right) {
   ok(!!to && to.rows[0].result === "time's up", "la fila dice \"time's up\"");
   ok(to.rows[0].points === 0, "0 puntos en la hoja");
   ok(to.rows[0].first === "—", "no inventa una contestacion que no dio");
+
+  console.log("\n=== 12. Un dia terminado ANTES de conectar la hoja se sube solo ===");
+  const d = new Date();
+  const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const seeded = { items: [], answers: {}, score: 10, done: true, date: key, student: "Koran", doneAt: new Date().toISOString() };
+  for (let i = 0; i < 10; i++) {
+    seeded.items.push({ c: BANK[i].id, v: 0, review: false });
+    seeded.answers[i] = { first: correctOf(seeded.items[i]), firstOk: true, pick: correctOf(seeded.items[i]), ok: true, tries: 1, final: true, pts: 1, at: new Date().toISOString() };
+  }
+  const w7 = await boot({ seedDays: { [key]: seeded }, SHEETS_URL: "https://script.google.com/fake/exec" });
+  await tick(120);
+  const sent = w7.__posts.filter(p => p.op === "set" && p.date === key);
+  ok(sent.length > 0, "sube el dia guardado sin que haya que contestar nada");
+  ok(sent.length && sent[0].day.score === 10, "sube la puntuacion correcta (10)");
+  ok(sent.length && sent[0].readable.rows.length === 10, "manda las 10 filas legibles a la hoja");
+  ok(/All 10 answered|Final score/.test(w7.document.body.textContent), "la app muestra el resultado ya terminado");
+
+  console.log("\n=== 13. Si Google falla, no se pierde nada ===");
+  const w8 = await boot({ seedDays: { [key]: seeded }, SHEETS_URL: "https://script.google.com/fake/exec", failFetch: true });
+  await tick(120);
+  ok(/Final score|All 10 answered/.test(w8.document.body.textContent), "con el servidor caido sigue mostrando lo guardado");
+  ok(dayDoc(w8).score === 10, "las contestaciones siguen intactas en el telefono");
 
   console.log(`\n──────── ${pass} pasaron · ${fail} fallaron ────────`);
   process.exit(fail ? 1 : 0);
