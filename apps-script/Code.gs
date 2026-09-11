@@ -7,18 +7,30 @@
  *   Daily summary  one row per day: date, score, answered, completed
  *   Totals         cumulative: days completed, average score, best score, last day
  *
+ * Daily WhatsApp via CallMeBot: 7 AM link to Koran, 6 PM nudge if unfinished, 8 PM results to Irene.
+ *
  * Setup: see README.md (step 3). Deploy > New deployment > Web app,
  *   Execute as: Me · Who has access: Anyone. Copy the /exec URL into js/config.js (SHEETS_URL).
  */
 
+/*
+ * Private settings go in Apps Script → Project Settings → Script properties (NOT in this file,
+ * because the GitHub repo is public):
+ *   DASHBOARD_URL           GitHub Pages link to the dashboard
+ *   STUDENT_WHATSAPP        Koran's WhatsApp number with country code, e.g. +17875551234
+ *   STUDENT_CALLMEBOT_KEY   the apikey CallMeBot sent to Koran
+ *   PARENT_WHATSAPP         Irene's WhatsApp number with country code
+ *   PARENT_CALLMEBOT_KEY    the apikey CallMeBot sent to Irene
+ *   STUDENT_EMAIL, PARENT_EMAIL   (optional) email copies
+ */
+const PROPS = PropertiesService.getScriptProperties();
 const CONFIG = {
   STUDENT: 'Koran',
-  PARENT_EMAIL: '',     // Irene's email for the daily results summary (leave '' to skip)
-  STUDENT_EMAIL: '',    // Koran's email for the daily reminder with the link (leave '' to skip)
-  DASHBOARD_URL: '',    // GitHub Pages link to the dashboard
-  REMINDER_HOUR: 7,     // 7 AM reminder to the student
-  SUMMARY_HOUR: 20      // 8 PM summary to the parent
+  REMINDER_HOUR: 7,     // 7 AM: "your questions are ready" → Koran
+  NUDGE_HOUR: 18,       // 6 PM: reminder only if today is not finished → Koran
+  SUMMARY_HOUR: 20      // 8 PM: daily results → Irene
 };
+const prop_ = k => (PROPS.getProperty(k) || '').trim();
 
 const DAYS = 'Days', ANSWERS = 'Answers', SUMMARY = 'Daily summary', TOTALS = 'Totals';
 
@@ -144,42 +156,109 @@ function ensureTotals_() {
   sh.setColumnWidth(1, 240);
 }
 
-/* ───────── daily emails (free, no tokens) ───────── */
+/* ───────── daily WhatsApp (CallMeBot) + optional email — free, no tokens ───────── */
 function todayKey_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 
-function sendDailyReminder() {
-  if (!CONFIG.STUDENT_EMAIL || !CONFIG.DASHBOARD_URL) return;
-  MailApp.sendEmail({
-    to: CONFIG.STUDENT_EMAIL,
-    subject: 'Your 10 questions for today are ready',
-    htmlBody: 'Hi ' + CONFIG.STUDENT + '! Your daily A&P review is ready.<br><br>' +
-      '<a href="' + CONFIG.DASHBOARD_URL + '" style="font-size:18px">Open today\'s questions</a>'
+function sendWhatsApp_(phone, apikey, text) {
+  if (!phone || !apikey) return false;
+  const url = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(phone) +
+    '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(apikey);
+  const res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const ok = res.getResponseCode() === 200;
+  if (!ok) console.warn('CallMeBot error ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 300));
+  return ok;
+}
+
+function toStudent_(text, subject) {
+  sendWhatsApp_(prop_('STUDENT_WHATSAPP'), prop_('STUDENT_CALLMEBOT_KEY'), text);
+  if (prop_('STUDENT_EMAIL')) MailApp.sendEmail(prop_('STUDENT_EMAIL'), subject, text);
+}
+
+function toParent_(text, subject) {
+  sendWhatsApp_(prop_('PARENT_WHATSAPP'), prop_('PARENT_CALLMEBOT_KEY'), text);
+  if (prop_('PARENT_EMAIL')) MailApp.sendEmail(prop_('PARENT_EMAIL'), subject, text);
+}
+
+/* rows of today's Answers sheet → { missed: [...], half: [...] } */
+function todaysTopics_(date) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ANSWERS);
+  const out = { missed: [], half: [] };
+  if (!sh || sh.getLastRow() < 2) return out;
+  // columns: date, attempt, #, topic, concept, type, question, 1st, 2nd, correct, result, points, review?
+  sh.getRange(2, 1, sh.getLastRow() - 1, 13).getDisplayValues().forEach(r => {
+    if (r[0] !== date) return;
+    if (r[1] !== 'official') return;            // practice rounds never go in Irene's summary
+    if (r[10] === 'incorrect' || r[10] === "time's up") out.missed.push(r[4]);
+    if (r[10] === 'correct (2nd try)') out.half.push(r[4]);
   });
+  return out;
+}
+
+function sendDailyReminder() {
+  const link = prop_('DASHBOARD_URL');
+  toStudent_('Hi ' + CONFIG.STUDENT + '! 📚 Your 10 A&P questions for today are ready:\n' + link,
+    'Your 10 questions for today are ready');
+}
+
+function sendEveningNudge() {
+  const day = getDay_(todayKey_());
+  if (day && day.done) return;
+  const answered = day ? Object.values(day.answers || {}).filter(a => a.final !== false).length : 0;
+  toStudent_('Hi ' + CONFIG.STUDENT + '! You have ' + (10 - answered) + ' A&P questions left for today. ' +
+    'It only takes a few minutes 💪\n' + prop_('DASHBOARD_URL'), 'A&P questions left for today');
 }
 
 function sendDailySummary() {
-  if (!CONFIG.PARENT_EMAIL) return;
-  const day = getDay_(todayKey_());
-  let body;
+  const date = todayKey_();
+  const day = getDay_(date);
+  let text;
   if (!day || !Object.keys(day.answers || {}).length) {
-    body = CONFIG.STUDENT + ' no ha contestado las preguntas de hoy.';
+    text = '📊 ' + CONFIG.STUDENT + ' no contestó las preguntas de hoy (' + date + ').';
   } else {
     const total = (day.items || []).length;
     const answered = Object.values(day.answers).filter(a => a.final !== false).length;
-    body = CONFIG.STUDENT + ' — resultado de hoy: ' + (day.score || 0) + ' / ' + total +
-      ' (' + answered + ' de ' + total + ' contestadas' + (day.done ? ', completado' : ', sin terminar') + ').' +
-      '<br><br>Detalle en la hoja "Answers" y acumulado en "Totals".' +
-      (CONFIG.DASHBOARD_URL ? '<br><a href="' + CONFIG.DASHBOARD_URL + '">Abrir dashboard (pestaña Results)</a>' : '');
+    const t = todaysTopics_(date);
+    text = '📊 Resultado de ' + CONFIG.STUDENT + ' — ' + date + '\n' +
+      'Puntuación: ' + (day.score || 0) + ' / ' + total + '\n' +
+      'Contestadas: ' + answered + ' de ' + total + (day.done ? ' ✅' : ' (sin terminar)') +
+      (t.missed.length ? '\nIncorrectas: ' + t.missed.join(', ') : '') +
+      (t.half.length ? '\nCorrectas en 2do intento: ' + t.half.join(', ') : '') +
+      ((day.retakes || []).length
+        ? '\nRepasó por su cuenta: ' + day.retakes.map(function (r, i) {
+            return '#' + (i + 1) + ' ' + Object.values(r.answers || {})
+              .filter(function (a) { return a.final !== false; })
+              .reduce(function (s, a) { return s + (a.pts !== undefined ? a.pts : (a.ok ? 1 : 0)); }, 0) + '/' + total;
+          }).join(' · ') + ' (práctica, no cuenta)'
+        : '') +
+      '\n' + totalsLine_() +
+      (prop_('DASHBOARD_URL') ? '\nDashboard: ' + prop_('DASHBOARD_URL') : '');
   }
-  MailApp.sendEmail({ to: CONFIG.PARENT_EMAIL, subject: 'Resultado diario de ' + CONFIG.STUDENT, htmlBody: body });
+  toParent_(text, 'Resultado diario de ' + CONFIG.STUDENT);
 }
 
-/** Run once from the editor to install the daily emails. */
+function totalsLine_() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SUMMARY);
+  if (!sh || sh.getLastRow() < 2) return '';
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 7).getValues().filter(r => r[6] === 'yes');
+  if (!rows.length) return '';
+  const avg = rows.reduce((s, r) => s + Number(r[3] || 0), 0) / rows.length;
+  return 'Acumulado: ' + rows.length + ' días completados · promedio ' + avg.toFixed(1) + ' / 10';
+}
+
+/** Run once to check that both WhatsApp numbers receive messages. */
+function testWhatsApp() {
+  const a = sendWhatsApp_(prop_('STUDENT_WHATSAPP'), prop_('STUDENT_CALLMEBOT_KEY'), 'Test ✅ Daily A&P Review is connected to your WhatsApp.');
+  const b = sendWhatsApp_(prop_('PARENT_WHATSAPP'), prop_('PARENT_CALLMEBOT_KEY'), 'Prueba ✅ Recibirás aquí el resultado diario de ' + CONFIG.STUDENT + '.');
+  console.log('Koran: ' + (a ? 'sent' : 'NOT sent — check number/key') + ' · Irene: ' + (b ? 'sent' : 'NOT sent — check number/key'));
+}
+
+/** Run once from the editor to install the daily messages. */
 function setupDailyTriggers() {
   ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('sendDailyReminder').timeBased().everyDays(1).atHour(CONFIG.REMINDER_HOUR).create();
+  ScriptApp.newTrigger('sendEveningNudge').timeBased().everyDays(1).atHour(CONFIG.NUDGE_HOUR).create();
   ScriptApp.newTrigger('sendDailySummary').timeBased().everyDays(1).atHour(CONFIG.SUMMARY_HOUR).create();
 }
 

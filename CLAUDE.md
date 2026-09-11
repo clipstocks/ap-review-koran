@@ -5,10 +5,10 @@ Daily review dashboard for **Koran** (student, has NO Claude account). Owner: **
 ## Goal of this repo
 1. Koran opens a normal link on his phone every day and answers **10 questions**.
 2. Irene sees his results **per day and cumulative** on her phone.
-3. Running it must cost **zero tokens** day to day: static site on **GitHub Pages** + **Google Sheets** (Apps Script web app) for results. Tokens are only spent when adding chapters or changing code.
+3. Running it must cost **zero tokens** day to day: static site on **GitHub Pages** + **Google Sheets** (Apps Script web app) for results + **WhatsApp messages via CallMeBot** sent by Apps Script triggers. Tokens are only spent when adding chapters or changing code.
 
 ## Current chapter
-A&P Chapter 1: Introduction to Anatomy & Physiology (source photos in `docs/study-guide/`). Bank: 43 concepts, 111 questions in `js/bank.js`.
+A&P Chapter 1: Introduction to Anatomy & Physiology (source photos in `docs/study-guide/`). Bank: 50 concepts, 139 questions in `js/bank.js`.
 
 ## Rules Irene set (do not change without asking her)
 - 10 questions/day, score out of 10. Types: multiple choice (`mc`), analyze the case (`scn`), true/false (`tf`), select all (`multi`). No open questions. Diagram questions allowed (`img`: `quad:*`, `reg:*`, `plane:*`, drawn by `drawImg()` in bank.js).
@@ -32,7 +32,7 @@ js/config.js               STUDENT, CHAPTER, SHEETS_URL, STORAGE_KEY,
                            Q_SECONDS, RETAKE_MAX_SCORE, RETAKE_WAIT_MIN  ← edit this, not app.js
 js/bank.js                 TOPICS, BANK, drawImg()   (mc/scn: correct option FIRST; tf: a=true/false; multi: a=[indices])
 js/app.js                  day builder, 2-try logic, results tab, storage adapters (localStore, sheetsStore, dbStore)
-apps-script/Code.gs        Google Apps Script backend (doGet/doPost), readable sheets, daily emails
+apps-script/Code.gs        Google Apps Script backend (doGet/doPost), readable sheets, daily WhatsApp (CallMeBot) + optional email
 tools/build-question-bank.js   node → docs/question-bank.html (print to PDF)
 tools/test-dashboard.js        `npm i jsdom && node tools/test-dashboard.js` — drives the real page
                                headless: sequential lock, 2-min clock, time-out, retake gate,
@@ -52,7 +52,11 @@ docs/                      question-bank.pdf, study-guide photos, preview-no-js.
 1. `git init`, commit, create a GitHub repo (public is required for free GitHub Pages), push, enable Pages (branch `main`, root). Test the link on a phone.
 2. Google Sheets: create a sheet "A&P Review – Koran" → Extensions → Apps Script → paste `apps-script/Code.gs` → set project time zone (America/Puerto_Rico or America/New_York) → Deploy → New deployment → Web app, Execute as **Me**, access **Anyone** → authorize → copy the `/exec` URL.
 3. Put that URL in `js/config.js` → commit/push. Answer one question on the live site and confirm rows appear in `Answers`.
-4. In Code.gs `CONFIG`: set `PARENT_EMAIL`, `STUDENT_EMAIL`, `DASHBOARD_URL` → redeploy (Manage deployments → edit → new version) → run `setupDailyTriggers()` once (7 AM reminder to Koran, 8 PM summary to Irene).
+4. WhatsApp via **CallMeBot** (free, personal use; each person activates their OWN number):
+   - Koran and Irene each follow https://www.callmebot.com/blog/free-api-whatsapp-messages/ : save the bot number shown there, send it "I allow callmebot to send me messages", receive an apikey.
+   - In Apps Script → Project Settings → **Script properties** add: `DASHBOARD_URL`, `STUDENT_WHATSAPP`, `STUDENT_CALLMEBOT_KEY`, `PARENT_WHATSAPP`, `PARENT_CALLMEBOT_KEY` (numbers with country code, e.g. +1787…). Optional: `STUDENT_EMAIL`, `PARENT_EMAIL`. **Never put these in the repo** (it is public).
+   - Run `testWhatsApp()` once (both should get a test message), then run `setupDailyTriggers()` once: 7 AM link to Koran, 6 PM nudge only if unfinished, 8 PM results to Irene (score, incorrect topics, 2nd-try topics, practice rounds, cumulative average).
+   - If CallMeBot activation says the bot is full, wait and retry later; email copies still work meanwhile.
 5. On Koran's phone: open the link → Share → "Add to Home Screen".
 
 ## New chapter later

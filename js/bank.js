@@ -51,7 +51,9 @@ const BANK = [
     v: [
       { t: "mc", q: "Which area of physiology studies chemical processes within and between cells?", o: ["Cell physiology", "Systemic physiology", "Special (organ) physiology", "Clinical physiology"] },
       { t: "scn", q: "A researcher studies how diabetes damages the kidneys. Which area of physiology is this?", o: ["Clinical (pathological) physiology", "Cell physiology", "Special (organ) physiology", "Systemic physiology"] },
-      { t: "tf", q: "Special (organ) physiology studies the functions of specific organs.", a: true }
+      { t: "tf", q: "Special (organ) physiology studies the functions of specific organs.", a: true },
+      { t: "tf", q: "Systemic physiology studies the functions of an organ system.", a: true },
+      { t: "scn", q: "A scientist studies how the lungs, airways, and diaphragm work together as a whole system to move air. Which area of physiology is this?", o: ["Systemic physiology", "Cell physiology", "Clinical (pathological) physiology", "Microscopic anatomy"] }
     ] },
 
   // ───────── Organization & homeostasis ─────────
@@ -60,7 +62,8 @@ const BANK = [
     v: [
       { t: "mc", q: "Which list shows the levels of organization in the correct order, from smallest to largest?", o: ["Atoms → Molecules → Organelles → Cells → Tissues → Organs → Organ systems → Organism", "Cells → Atoms → Molecules → Tissues → Organelles → Organs → Organ systems → Organism", "Molecules → Atoms → Cells → Organelles → Organs → Tissues → Organism → Organ systems", "Atoms → Molecules → Cells → Organelles → Tissues → Organ systems → Organs → Organism"] },
       { t: "mc", q: "Which level comes right after TISSUES?", o: ["Organs", "Cells", "Organ systems", "Organelles"] },
-      { t: "tf", q: "An organ is composed of tissues.", a: true }
+      { t: "tf", q: "An organ is composed of tissues.", a: true },
+      { t: "mc", q: "Tissues are composed of:", o: ["Cells", "Organs", "Organ systems", "Organisms"] }
     ] },
   { id: "atomcell", t: "org", name: "Atom vs. cell",
     ex: "The atom is the smallest stable unit of matter, but it is NOT alive. The cell is the smallest LIVING unit.",
@@ -73,6 +76,48 @@ const BANK = [
     v: [
       { t: "mc", q: "An organ system is:", o: ["A group of organs with a unique collective function", "A group of similar cells", "The smallest living unit", "A single organ"] },
       { t: "scn", q: "The mouth, stomach, and intestines work together to break down food. This group is an example of a(n):", o: ["Organ system", "Tissue", "Organelle", "Molecule"] }
+    ] },
+  { id: "systems11", t: "org", name: "The 11 organ systems",
+    ex: "The body has 11 organ systems: integumentary, skeletal, muscular, nervous, endocrine, cardiovascular, lymphatic, respiratory, digestive, urinary, and reproductive.",
+    v: [
+      { t: "multi", q: "Select the organ systems that are part of the 11 organ systems of the body.", o: ["Integumentary", "Lymphatic", "Endocrine", "Urinary", "Mediastinal", "Peritoneal"], a: [0, 1, 2, 3] },
+      { t: "mc", q: "How many organ systems does the human body have?", o: ["11", "7", "4", "20"] },
+      { t: "tf", q: "The integumentary, skeletal, muscular, and nervous systems are 4 of the 11 organ systems.", a: true }
+    ] },
+  { id: "integumentary", t: "org", name: "Integumentary system",
+    ex: "The integumentary system is the skin (plus hair and nails). Its main job is PROTECTION, like a raincoat that covers the whole body and keeps germs out.",
+    v: [
+      { t: "mc", q: "What is the main function of the integumentary system?", o: ["Protection", "Movement", "Controlling immediate responses", "Producing blood cells"] },
+      { t: "scn", q: "Your skin keeps germs and harmful things out of your body. Which organ system is doing this job?", o: ["Integumentary", "Skeletal", "Muscular", "Nervous"] },
+      { t: "tf", q: "The main function of the integumentary system is movement.", a: false }
+    ] },
+  { id: "skeletalsys", t: "org", name: "Skeletal system",
+    ex: "The skeletal system (bones) gives the body SUPPORT, like the frame of a house, and PROTECTION, like the skull around the brain and the ribs around the heart and lungs.",
+    v: [
+      { t: "mc", q: "Which organ system provides support and protection for the body?", o: ["Skeletal", "Muscular", "Nervous", "Digestive"] },
+      { t: "scn", q: "The skull surrounds the brain and the ribs surround the heart and lungs. Which organ system is protecting these organs?", o: ["Skeletal", "Muscular", "Nervous", "Digestive"] },
+      { t: "tf", q: "The skeletal system gives the body support and protection.", a: true }
+    ] },
+  { id: "muscularsys", t: "org", name: "Muscular system",
+    ex: "The muscular system is in charge of MOVEMENT. Muscles pull on bones so you can walk, run, and even smile.",
+    v: [
+      { t: "mc", q: "What is the main function of the muscular system?", o: ["Movement", "Protection of the body surface", "Controlling immediate responses", "Producing hormones"] },
+      { t: "scn", q: "You run to catch the bus. Which organ system produces the movement of your legs?", o: ["Muscular", "Integumentary", "Endocrine", "Urinary"] },
+      { t: "tf", q: "The muscular system is responsible for movement.", a: true }
+    ] },
+  { id: "nervoussys", t: "org", name: "Nervous system (organ system)",
+    ex: "The nervous system CONTROLS IMMEDIATE RESPONSES. It reacts in a split second, like blinking when something flies toward your eye.",
+    v: [
+      { t: "mc", q: "Which organ system controls immediate responses?", o: ["Nervous", "Muscular", "Skeletal", "Integumentary"] },
+      { t: "scn", q: "A ball flies toward your face and you blink instantly. Which organ system controlled this immediate response?", o: ["Nervous", "Integumentary", "Skeletal", "Digestive"] },
+      { t: "tf", q: "The nervous system's main job is to support and protect the body like a frame.", a: false }
+    ] },
+  { id: "interdependent", t: "org", name: "Organ systems work together",
+    ex: "All organ systems depend on each other (they are interdependent) to keep the inside of the body stable. That stable inside environment is called HOMEOSTASIS.",
+    v: [
+      { t: "mc", q: "All organ systems depend on each other (are interdependent) in order to preserve a stable internal environment, also known as:", o: ["Homeostasis", "Positive feedback", "Anatomical position", "Metabolism"] },
+      { t: "tf", q: "Each organ system works alone and does not depend on the other systems.", a: false },
+      { t: "scn", q: "During exercise, your breathing and heart rate both speed up to keep oxygen in your blood stable. What does this show?", o: ["Organ systems work together to maintain homeostasis", "Organ systems work independently", "Only one organ system is working", "The body is using anatomy, not physiology"] }
     ] },
   { id: "life", t: "org", name: "Characteristics of life",
     ex: "Living things have cells, metabolism, reproduction, response to the environment, and adaptation (evolution). The slides' memory trick is CHRMD: Cells, Homeostasis, Reproduction, Metabolism, DNA/Heredity.",
@@ -96,11 +141,13 @@ const BANK = [
       { t: "tf", q: "Control of body temperature is an example of negative feedback.", a: true }
     ] },
   { id: "posfb", t: "org", name: "Positive feedback",
-    ex: "In positive feedback, the response makes the change even BIGGER until an event is finished. Examples: childbirth (contractions get stronger), blood clotting, and lactation.",
+    ex: "In positive feedback, the response makes the change even BIGGER until an event is finished. Examples from the course: childbirth (contractions get stronger), blood clotting, lactation (breastfeeding), coughing, and sneezing.",
     v: [
       { t: "mc", q: "In positive feedback, the response:", o: ["Enhances/amplifies the original stimulus", "Opposes/reduces the original stimulus", "Always restores the normal set point right away", "Only happens in plants"] },
       { t: "scn", q: "During childbirth, contractions trigger a hormone that makes the contractions even stronger. This is:", o: ["Positive feedback", "Negative feedback", "Homeostatic set point", "A sectional plane"] },
-      { t: "multi", q: "Select the examples of POSITIVE feedback.", o: ["Childbirth", "Blood clotting", "Lactation", "Body temperature regulation", "Blood pressure regulation"], a: [0, 1, 2] }
+      { t: "multi", q: "Select the examples of POSITIVE feedback.", o: ["Childbirth", "Blood clotting", "Lactation", "Body temperature regulation", "Blood pressure regulation"], a: [0, 1, 2] },
+      { t: "tf", q: "In this course, coughing and sneezing are examples of positive feedback.", a: true },
+      { t: "multi", q: "Select the examples of positive feedback listed in the course.", o: ["Coughing", "Sneezing", "Breastfeeding (lactation)", "Blood glucose regulation", "Blood calcium regulation"], a: [0, 1, 2] }
     ] },
   { id: "regmech", t: "org", name: "Receptor → control center → effector",
     ex: "Receptor = senses a change. Control center = processes the information and sends instructions. Effector = carries out the instructions. Example: skin senses cold → brain decides → muscles shiver.",
@@ -231,6 +278,15 @@ const BANK = [
       { t: "mc", img: "quad:RUQ", q: "Which quadrant is highlighted? (R = patient's right)", o: ["RUQ — Right Upper Quadrant", "LUQ — Left Upper Quadrant", "RLQ — Right Lower Quadrant", "LLQ — Left Lower Quadrant"] },
       { t: "mc", img: "quad:LLQ", q: "Which quadrant is highlighted? (R = patient's right)", o: ["LLQ — Left Lower Quadrant", "RLQ — Right Lower Quadrant", "LUQ — Left Upper Quadrant", "RUQ — Right Upper Quadrant"] },
       { t: "mc", q: "What does LUQ stand for?", o: ["Left Upper Quadrant", "Lower Upper Quadrant", "Lateral Upper Quadrant", "Left Under Quadrant"] }
+    ] },
+  { id: "quadorgans", t: "abdomen", name: "Organs in the abdominal quadrants",
+    ex: "One organ in each quadrant: RUQ = liver, LUQ = stomach, RLQ = appendix, LLQ = large intestine. Right and left are always the PATIENT's right and left.",
+    v: [
+      { t: "mc", img: "quad:RUQ", q: "Which organ is found in the highlighted quadrant? (R = patient's right)", o: ["Liver", "Appendix", "Stomach", "Urinary bladder"] },
+      { t: "mc", img: "quad:LUQ", q: "Which organ is found in the highlighted quadrant? (R = patient's right)", o: ["Stomach", "Liver", "Appendix", "Urinary bladder"] },
+      { t: "mc", img: "quad:LLQ", q: "Which organ is found in the highlighted quadrant? (R = patient's right)", o: ["Large intestine", "Liver", "Appendix", "Stomach"] },
+      { t: "mc", q: "The appendix is located in the:", o: ["RLQ — Right Lower Quadrant", "LUQ — Left Upper Quadrant", "RUQ — Right Upper Quadrant", "LLQ — Left Lower Quadrant"] },
+      { t: "scn", q: "A patient has sharp pain in the RLQ, and the doctor suspects appendicitis. Why does the location make sense?", o: ["The appendix is in the right lower quadrant", "The liver is in the right lower quadrant", "The stomach is in the right lower quadrant", "The appendix is in the left upper quadrant"] }
     ] },
   { id: "regcenter", t: "abdomen", name: "Epigastric, umbilical & hypogastric regions",
     ex: "The middle column of the 9 regions, from top to bottom: EPIGASTRIC (above the stomach area), UMBILICAL (around the belly button), HYPOGASTRIC (below the belly button).",
