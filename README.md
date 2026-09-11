@@ -7,7 +7,8 @@ Dashboard de repaso diario del **Capítulo 1 de Anatomía y Fisiología** para K
 - **2 minutos por pregunta.** El reloj cubre los dos intentos. Si cierra la app **el reloj se detiene** y al volver sigue en la misma pregunta. Si se acaba el tiempo: 0 puntos, le enseña la contestación con la explicación, y ese concepto vuelve mañana.
 - **Puntos:** bien al 1er intento = 1 punto · bien al 2do = ½ punto · mal las dos veces = 0. Cierto o falso tiene un solo intento.
 - **Lo que falla vuelve mañana**, preguntado de otra forma y marcado *Review*.
-- **Si saca 2 o menos de 10:** le sale la lista de conceptos **con su explicación para estudiar**, y a los **60 minutos** se le abre la opción de repetir la prueba con preguntas distintas. Esa repetición es práctica: **no cambia la nota del día**, que siempre es la del primer intento.
+- **Puede repetir la prueba las veces que quiera, el mismo día.** Al terminar le sale la lista de lo que falló **con la explicación para estudiar**, y el botón para volver a empezar con preguntas distintas.
+- **La nota que cuenta es la de la primera vuelta.** Las demás se guardan todas en Google Sheets (`attempt 1`, `attempt 2`, …) para que veas cuánto practicó y cómo fue mejorando, pero no cambian la nota del día.
 
 ## Cómo funciona sin gastar tokens
 - **GitHub Pages** (gratis) publica el dashboard como un enlace normal. Koran no necesita cuenta.

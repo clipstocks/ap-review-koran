@@ -8,8 +8,9 @@ const SHEETS_URL = CFG.SHEETS_URL || "";
 const KEY_PREFIX = CFG.STORAGE_KEY || "ap-ch1-koran";
 const PER_DAY = 10;
 const Q_SECONDS = Number(CFG.Q_SECONDS) > 0 ? Number(CFG.Q_SECONDS) : 120;
-const RETAKE_MAX_SCORE = CFG.RETAKE_MAX_SCORE !== undefined ? Number(CFG.RETAKE_MAX_SCORE) : 2;
-const RETAKE_WAIT_MS = (Number(CFG.RETAKE_WAIT_MIN) >= 0 ? Number(CFG.RETAKE_WAIT_MIN) : 60) * 60000;
+const RETAKE_WAIT_MS = (Number(CFG.RETAKE_WAIT_MIN) >= 0 ? Number(CFG.RETAKE_WAIT_MIN) : 0) * 60000;
+const MAX_ATTEMPTS = Number(CFG.MAX_ATTEMPTS) > 0 ? Number(CFG.MAX_ATTEMPTS) : 20;
+const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
 const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const TYPE_LABEL = { mc: "Multiple choice", scn: "Analyze the case", tf: "True or false", multi: "Select all" };
 const byId = Object.fromEntries(BANK.map(c => [c.id, c]));
@@ -152,10 +153,10 @@ function rowsOf(a0, label) {
 }
 
 function readableOf(d) {
-  // the official attempt first, then any practice rounds — same date, marked by the attempt column
-  let rows = rowsOf(d, "official");
-  (d.retakes || []).forEach((r, n) => { rows = rows.concat(rowsOf({ ...r, date: d.date }, "practice " + (n + 1))); });
-  const practice = (d.retakes || []).map((r, n) => ({ n: n + 1, score: scoreOf(r), done: !!r.done }));
+  // every round of the day, in order, told apart by the attempt column
+  let rows = rowsOf(d, "attempt 1");
+  (d.retakes || []).forEach((r, n) => { rows = rows.concat(rowsOf({ ...r, date: d.date }, "attempt " + (n + 2))); });
+  const practice = (d.retakes || []).map((r, n) => ({ n: n + 2, score: scoreOf(r), done: !!r.done }));
   return {
     student: STUDENT, chapter: CHAPTER, date: d.date,
     score: scoreOf(d), answered: finalCount(d), total: (d.items || []).length, done: !!d.done,
@@ -310,12 +311,12 @@ function renderAxon() {
     s += `<span class="seg ${cls}">${i + 1}</span>`;
   }
   box.innerHTML = s;
-  const retake = attNo() > 0;
+  const n = attNo() + 1;                    // 1 = the attempt that counts
   $("#score").innerHTML = `${pts(a0 ? scoreOf(a0) : 0)}<small>/${PER_DAY}</small>`;
   $("#status").innerHTML = !a0 ? "Getting your questions ready…"
-    : a0.done ? (retake ? `<b>Practice round finished</b>` : `<b>All ${PER_DAY} answered</b> · come back tomorrow`)
-    : `<b>${finalCount(a0)} of ${PER_DAY}</b> answered${retake ? " · practice round" : ""}`;
-  $("#score-label").textContent = !a0 ? "Score" : retake ? (a0.done ? "Practice score" : "Practice") : a0.done ? "Final score" : "Score";
+    : a0.done ? (n > 1 ? `<b>Round ${n} finished</b> · you can go again` : `<b>All ${PER_DAY} answered</b>`)
+    : `<b>${finalCount(a0)} of ${PER_DAY}</b> answered${n > 1 ? ` · round ${n}` : ""}`;
+  $("#score-label").textContent = !a0 ? "Score" : n > 1 ? ordinal(n) + " round" : a0.done ? "Final score" : "Score";
   $("#axon-card").classList.toggle("final", !!(a0 && a0.done));
 }
 
@@ -417,40 +418,38 @@ function renderSummary() {
   const cur = att();
   if (!cur || !cur.done) { box.innerHTML = ""; if (retakeIv) { clearInterval(retakeIv); retakeIv = null; } return; }
   const s = scoreOf(cur);
-  const retake = attNo() > 0;
+  const n = attNo() + 1;            // 1 = the attempt that counts
   const head = s === PER_DAY ? "Perfect! Every answer right." : s >= 8 ? "Great job!" : s >= 6 ? "Good work!" : "Nice effort. We'll review these tomorrow.";
   // concepts he did not get right on the first try — these are the ones to study
   const missedC = cur.items.filter((_, i) => !firstOk(cur.answers[i])).map(it => byId[it.c]);
   const text = reportText(today);
 
-  let h = `<div class="summary"><p class="label">${retake ? "Practice score" : "Final score"}</p>`;
+  let h = `<div class="summary"><p class="label">${n === 1 ? "Final score" : ordinal(n) + " round"}</p>`;
   h += `<h2>${pts(s)}<small> / ${PER_DAY}</small></h2><p class="msg">${esc(head)}</p>`;
-  if (retake) h += `<p class="small">Practice round ${attNo()}. The score that counts for today is still <b>${pts(scoreOf(today))}/${PER_DAY}</b>.</p>`;
+  if (n > 1) h += `<p class="small">Round ${n} today. The score that counts is the first one: <b>${pts(scoreOf(today))}/${PER_DAY}</b>. Every round is saved.</p>`;
 
-  // low score: study the concepts, then the test reopens with different questions
-  const canRetake = s <= RETAKE_MAX_SCORE;
-  if (canRetake && missedC.length) {
-    h += `<div class="study"><p class="study-h">Review these concepts before trying again</p><ul class="study-list">`;
+  if (missedC.length) {
+    h += `<div class="study"><p class="study-h">Review these before you go again</p><ul class="study-list">`;
     missedC.forEach(c => { h += `<li><b>${esc(c.name)}</b><span>${esc(c.ex)}</span></li>`; });
     h += `</ul></div>`;
   } else {
-    h += missedC.length
-      ? `<div><p>Coming back tomorrow, asked a different way:</p><ul>${missedC.map(c => `<li>${esc(c.name)}</li>`).join("")}</ul></div>`
-      : `<p>Everything right on the first try. Tomorrow brings new topics.</p>`;
+    h += `<p>Everything right on the first try. Tomorrow brings new topics.</p>`;
   }
 
-  if (canRetake) {
-    const left = retakeAt(cur) - Date.now();
-    h += `<div class="retake">`;
-    if (left > 0) {
-      h += `<button type="button" class="btn solid" id="retake" disabled>Retake in <span id="retake-left">${mmss(left)}</span></button>`;
-      h += `<p class="small">Study the concepts above. In <b>${Math.round(RETAKE_WAIT_MS / 60000)} minutes</b> you can take the test again, with different questions.</p>`;
-    } else {
-      h += `<button type="button" class="btn solid" id="retake">Take the test again</button>`;
-      h += `<p class="small">You get different questions on the same concepts. This is extra practice — it does not change today's score.</p>`;
-    }
-    h += `</div>`;
+  // he can go again as often as he likes, up to the safety cap
+  const left = retakeAt(cur) - Date.now();
+  const canRetake = n < MAX_ATTEMPTS;
+  h += `<div class="retake">`;
+  if (!canRetake) {
+    h += `<p class="small">That's ${MAX_ATTEMPTS} rounds today — more than enough. Come back tomorrow for new questions.</p>`;
+  } else if (left > 0) {
+    h += `<button type="button" class="btn solid" id="retake" disabled>Go again in <span id="retake-left">${mmss(left)}</span></button>`;
+    h += `<p class="small">Study the concepts above while you wait.</p>`;
+  } else {
+    h += `<button type="button" class="btn solid" id="retake">Take the test again</button>`;
+    h += `<p class="small">You get different questions. Take it as many times as you like — every round is saved, and the first one is the one that counts.</p>`;
   }
+  h += `</div>`;
 
   h += `<div class="share">`;
   h += `<a class="btn solid" id="share-wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Send results on WhatsApp</a>`;
@@ -475,7 +474,7 @@ function renderSummary() {
    misses come back as Review. The official attempt is never touched. */
 async function startRetake() {
   const cur = att();
-  if (!cur || !cur.done || retakeAt(cur) > Date.now()) return;
+  if (!cur || !cur.done || retakeAt(cur) > Date.now() || attNo() + 1 >= MAX_ATTEMPTS) return;
   // force the in-memory copy of today in: a stale one from store.list() would hide today's
   // misses, and the retake would come back with fresh concepts instead of Review variants
   const days = allDays.some(d => d.date === todayK) ? allDays.map(d => d.date === todayK ? today : d) : allDays.concat([today]);
@@ -634,7 +633,9 @@ function renderResults() {
     const badge = d.done ? `<span class="badge ${scoreOf(d) <= PER_DAY / 2 ? "low" : ""}">${pts(scoreOf(d))}/${PER_DAY}</span>` : `<span class="badge inc">${finalCount(d)}/${PER_DAY} answered</span>`;
     h += `<details class="day"><summary><span class="dd">${esc(fmt(d.date))}</span>${badge}</summary><div class="rows">`;
     if ((d.retakes || []).length) {
-      h += `<p class="small">Practice rounds after the test: ${d.retakes.map((r, n) => `#${n + 1} ${pts(scoreOf(r))}/${PER_DAY}`).join(" · ")}. The score above is the real one.</p>`;
+      h += `<p class="small">Rounds this day: <b>#1 ${pts(scoreOf(d))}/${PER_DAY} (counts)</b> · `
+        + d.retakes.map((r, n) => `#${n + 2} ${pts(scoreOf(r))}/${PER_DAY}`).join(" · ")
+        + `. The questions below are round 1.</p>`;
     }
     d.items.forEach((it, i) => {
       const vw = viewOf(d, i), a = d.answers[i];

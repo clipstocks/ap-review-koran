@@ -129,8 +129,8 @@ function writeReadable_(r) {
   const rows = (r.rows || []).map(x => [r.date, x.attempt || 'official', x.n, x.topic, x.concept, x.type, x.question, x.first, x.second, x.correct, x.result, x.points, x.review ? 'yes' : '']);
   if (rows.length) ans.getRange(ans.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
 
-  // 'practice rounds' goes before 'updated' so the Totals formulas (columns D, F, G) keep working
-  const sum = sheet_(SUMMARY, ['date', 'student', 'chapter', 'score', 'out of', 'answered', 'completed', 'practice rounds', 'updated']);
+  // 'extra rounds' goes before 'updated' so the Totals formulas (columns D, F, G) keep working
+  const sum = sheet_(SUMMARY, ['date', 'student', 'chapter', 'score', 'out of', 'answered', 'completed', 'extra rounds', 'updated']);
   const prac = (r.practice || []).map(p => '#' + p.n + ' ' + p.score + '/' + r.total).join(' · ');
   const vals = [r.date, r.student, r.chapter, r.score, r.total, r.answered, r.done ? 'yes' : 'no', prac, new Date()];
   const row = findRow_(sum, r.date);
@@ -189,7 +189,7 @@ function todaysTopics_(date) {
   // columns: date, attempt, #, topic, concept, type, question, 1st, 2nd, correct, result, points, review?
   sh.getRange(2, 1, sh.getLastRow() - 1, 13).getDisplayValues().forEach(r => {
     if (r[0] !== date) return;
-    if (r[1] !== 'official') return;            // practice rounds never go in Irene's summary
+    if (r[1] !== 'attempt 1') return;           // later rounds never go in Irene's summary
     if (r[10] === 'incorrect' || r[10] === "time's up") out.missed.push(r[4]);
     if (r[10] === 'correct (2nd try)') out.half.push(r[4]);
   });
@@ -226,11 +226,12 @@ function sendDailySummary() {
       (t.missed.length ? '\nIncorrectas: ' + t.missed.join(', ') : '') +
       (t.half.length ? '\nCorrectas en 2do intento: ' + t.half.join(', ') : '') +
       ((day.retakes || []).length
-        ? '\nRepasó por su cuenta: ' + day.retakes.map(function (r, i) {
-            return '#' + (i + 1) + ' ' + Object.values(r.answers || {})
+        ? '\nLa repitió ' + day.retakes.length + (day.retakes.length === 1 ? ' vez más: ' : ' veces más: ') +
+          day.retakes.map(function (r, i) {
+            return '#' + (i + 2) + ' ' + Object.values(r.answers || {})
               .filter(function (a) { return a.final !== false; })
               .reduce(function (s, a) { return s + (a.pts !== undefined ? a.pts : (a.ok ? 1 : 0)); }, 0) + '/' + total;
-          }).join(' · ') + ' (práctica, no cuenta)'
+          }).join(' · ') + '\n(la puntuación de arriba es la de la primera vuelta)'
         : '') +
       '\n' + totalsLine_() +
       (prop_('DASHBOARD_URL') ? '\nDashboard: ' + prop_('DASHBOARD_URL') : '');

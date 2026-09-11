@@ -120,7 +120,7 @@ async function answer(w, i, items, right) {
 
   console.log("\n=== 5. Mensaje de repasar + boton de repetir ===");
   const sum = w.document.getElementById("summary");
-  ok(/Review these concepts/.test(sum.textContent), "dice que repase los conceptos");
+  ok(/Review these/.test(sum.textContent), "dice que repase los conceptos");
   ok(sum.querySelectorAll(".study-list li").length > 0, "lista los conceptos a repasar");
   const exAll = new Set(BANK.map(c => c.ex));
   const nameAll = new Set(BANK.map(c => c.name));
@@ -143,7 +143,7 @@ async function answer(w, i, items, right) {
   const reviewed = doc2.retakes[0].items.filter(it => it.review).length;
   ok(reviewed > 0, "el repaso trae los conceptos fallados marcados Review (" + reviewed + ")");
   ok(!isLocked(w, 0), "el repaso arranca en la pregunta 1");
-  ok(/Practice/.test(w.document.getElementById("score-label").textContent), "la tarjeta dice Practice");
+  ok(/2nd round/.test(w.document.getElementById("score-label").textContent), "la tarjeta dice '2nd round'");
 
   console.log("\n=== 7. El reloj se pausa al cerrar la app ===");
   const w2 = await boot();
@@ -157,31 +157,61 @@ async function answer(w, i, items, right) {
   ok(frozen === still, "el reloj NO corre mientras esta cerrada");
   ok(!w2.document.querySelector("#q0 .fb"), "la pregunta sigue viva, no se cerro sola");
 
-  console.log("\n=== 8. Con la espera real de 60 minutos ===");
+  console.log("\n=== 8. La espera sigue disponible como perilla (60 min) ===");
   const w3 = await boot({ RETAKE_WAIT_MIN: 60, Q_SECONDS: 600 });
   const it3 = dayDoc(w3).items;
   for (let i = 0; i < 10; i++) await answer(w3, i, it3, false);
   const s3 = w3.document.getElementById("summary");
   ok(dayDoc(w3).score === 0, "score 0 de 10");
-  ok(/Review these concepts/.test(s3.textContent), "le dice que repase los conceptos");
+  ok(/Review these/.test(s3.textContent), "le dice que repase los conceptos");
   const btn3 = w3.document.getElementById("retake");
-  ok(!!btn3 && btn3.disabled, "el boton de repetir esta BLOQUEADO");
-  ok(/Retake in/.test(btn3.textContent), "el boton dice 'Retake in'");
+  ok(!!btn3 && btn3.disabled, "con la perilla en 60 el boton queda BLOQUEADO");
+  ok(/Go again in/.test(btn3.textContent), "el boton dice 'Go again in'");
   ok(/^(59|60):\d\d$/.test(w3.document.getElementById("retake-left").textContent), "cuenta regresiva cerca de 60:00 (" + w3.document.getElementById("retake-left").textContent + ")");
-  ok(/60 minutes/.test(s3.textContent), "explica que son 60 minutos");
   const before = w3.document.getElementById("retake-left").textContent;
   await tick(1200);
   ok(w3.document.getElementById("retake-left").textContent !== before, "la cuenta regresiva corre sola");
 
-  console.log("\n=== 9. Si saca buena nota, no se le ofrece repetir ===");
+  console.log("\n=== 9. Saque la nota que saque, puede repetir ===");
   const w4 = await boot({ Q_SECONDS: 600 });
   const it4 = dayDoc(w4).items;
   for (let i = 0; i < 10; i++) await answer(w4, i, it4, true);
   const s4 = w4.document.getElementById("summary");
   ok(dayDoc(w4).score === 10, "score 10 de 10 (score=" + dayDoc(w4).score + ")");
-  ok(!w4.document.getElementById("retake"), "NO aparece boton de repetir");
-  ok(!/Review these concepts/.test(s4.textContent), "no le pide repasar nada");
+  ok(!!w4.document.getElementById("retake"), "con 10/10 TAMBIEN puede repetir");
+  ok(!w4.document.getElementById("retake").disabled, "y el boton esta activo, sin espera");
+  ok(!/Review these/.test(s4.textContent), "no le pide repasar nada porque no fallo");
   ok(/Everything right on the first try/.test(s4.textContent), "lo felicita");
+
+  console.log("\n=== 9b. Varias vueltas seguidas, todas guardadas ===");
+  for (let ronda = 2; ronda <= 4; ronda++) {
+    await click(w4, "#retake");
+    await tick(30);
+    const its = dayDoc(w4).retakes[ronda - 2].items;
+    for (let i = 0; i < 10; i++) await answer(w4, i, its, ronda % 2 === 0);
+  }
+  const d4 = dayDoc(w4);
+  ok(d4.retakes.length === 3, "guarda las 3 vueltas extra (total 4)");
+  ok(d4.score === 10, "la nota del dia sigue siendo la de la 1ra vuelta");
+  ok(d4.retakes.every(r => r.done), "las 3 quedaron completas");
+  ok(d4.retakes[0].score === 10 && d4.retakes[1].score === 0, "guarda la nota de cada vuelta por separado");
+  ok(/4th round/.test(w4.document.getElementById("score-label").textContent), "la tarjeta dice '4th round'");
+
+  console.log("\n=== 9c. El tope de seguridad ===");
+  const w4b = await boot({ Q_SECONDS: 600, MAX_ATTEMPTS: 3 });
+  const itb = dayDoc(w4b).items;
+  for (let i = 0; i < 10; i++) await answer(w4b, i, itb, true);
+  for (let ronda = 2; ronda <= 3; ronda++) {
+    const b = w4b.document.getElementById("retake");
+    if (!b || b.disabled) break;
+    await click(w4b, "#retake");
+    await tick(30);
+    const its = dayDoc(w4b).retakes[ronda - 2].items;
+    for (let i = 0; i < 10; i++) await answer(w4b, i, its, true);
+  }
+  ok(dayDoc(w4b).retakes.length === 2, "llega al tope de 3 vueltas");
+  ok(!w4b.document.getElementById("retake"), "en el tope ya no ofrece el boton");
+  ok(/Come back tomorrow/.test(w4b.document.getElementById("summary").textContent), "le dice que vuelva manana");
 
   console.log("\n=== 10. Lo que se le manda a Google Sheets ===");
   const w5 = await boot({ Q_SECONDS: 600, RETAKE_WAIT_MIN: 0, SHEETS_URL: "https://script.google.com/fake/exec" });
@@ -192,7 +222,7 @@ async function answer(w, i, items, right) {
   let last = w5.__posts[w5.__posts.length - 1];
   ok(!!last && last.op === "set", "manda op=set");
   ok(last.readable && last.readable.rows.length === 10, "manda 10 filas legibles");
-  ok(last.readable.rows.every(r => r.attempt === "official"), "todas marcadas 'official'");
+  ok(last.readable.rows.every(r => r.attempt === "attempt 1"), "todas marcadas 'attempt 1'");
   ok(last.readable.score === 0 && last.readable.done === true, "manda score y dia completo");
   ok(last.readable.rows.every(r => r.concept && r.question && r.correct), "cada fila trae concepto, pregunta y contestacion correcta");
 
@@ -202,12 +232,12 @@ async function answer(w, i, items, right) {
   await answer(w5, 0, it5b, true);
   await tick(40);
   last = w5.__posts[w5.__posts.length - 1];
-  const prac = last.readable.rows.filter(r => r.attempt === "practice 1");
-  ok(prac.length === 10, "anade las 10 filas del repaso marcadas 'practice 1'");
-  ok(last.readable.rows.filter(r => r.attempt === "official").length === 10, "las oficiales siguen ahi, sin duplicar");
-  ok(last.readable.score === 0, "el score del resumen sigue siendo el OFICIAL");
-  ok(Array.isArray(last.readable.practice) && last.readable.practice[0].n === 1, "manda el resumen de los repasos aparte");
-  ok(prac[0].result === "correct", "registra el acierto del repaso");
+  const prac = last.readable.rows.filter(r => r.attempt === "attempt 2");
+  ok(prac.length === 10, "anade las 10 filas de la 2da vuelta marcadas 'attempt 2'");
+  ok(last.readable.rows.filter(r => r.attempt === "attempt 1").length === 10, "las de la 1ra vuelta siguen ahi, sin duplicar");
+  ok(last.readable.score === 0, "el score del resumen sigue siendo el de la 1ra vuelta");
+  ok(Array.isArray(last.readable.practice) && last.readable.practice[0].n === 2, "manda el resumen de las vueltas extra aparte");
+  ok(prac[0].result === "correct", "registra el acierto de la 2da vuelta");
 
   console.log("\n=== 11. Una pregunta vencida en la hoja ===");
   const w6 = await boot({ Q_SECONDS: 1, SHEETS_URL: "https://script.google.com/fake/exec" });

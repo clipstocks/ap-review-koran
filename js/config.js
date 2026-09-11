@@ -10,8 +10,9 @@ window.APP_CONFIG = {
   // ── Irene's rules. Change the numbers here, nothing else. ──
   // Seconds allowed per question. The clock covers BOTH tries and pauses if the app is closed.
   Q_SECONDS: 120,
-  // Offer to retake the test when the day's score is this or lower (out of 10).
-  RETAKE_MAX_SCORE: 2,
-  // Minutes he must wait — studying the concepts — before the retake unlocks.
-  RETAKE_WAIT_MIN: 60
+  // Minutes to wait before he can take it again. 0 = straight away.
+  RETAKE_WAIT_MIN: 0,
+  // Safety cap on attempts per day. Every attempt is stored in one Google Sheets cell, and a
+  // cell holds 50,000 characters — about 30 attempts. 20 keeps a wide margin.
+  MAX_ATTEMPTS: 20
 };
