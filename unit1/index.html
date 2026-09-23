@@ -478,12 +478,16 @@ if(!day.done && day.ids.length < PER_DAY){
 }
 let cur = {tries:0, picks:[], wrongPicks:[], finished:false};
 
+function isDone(d){ return !!(d.completed || d.done || (d.rounds && d.rounds.length)); }
+function roundAns(d){ return (d.rounds && d.rounds.length) ? d.rounds[0].ans : d.ans; }
+function sumPts(a){ return a.reduce((x,v)=>x+(v?v.pts:0),0); }
+function roundNo(){ return (day.rounds ? day.rounds.length : 0) + 1; }
 function points(){ return day.ans.reduce((s,a)=>s+a.pts,0); }
 function fmt(n){ return Number.isInteger(n)? String(n) : n.toFixed(1); }
 
 function renderBar(){
   const segs = day.ids.map((_,k)=>{ const a=day.ans[k]; if(a) return `<span class="p${a.pts===1?1:a.pts===0?0:5}"></span>`; return `<span class="${k===day.i&&!day.done?'now':''}"></span>`; }).join("");
-  const left = day.done ? "Done for today" : `Question ${Math.min(day.i+1,PER_DAY)} of ${day.ids.length}`;
+  const rn = roundNo(); const left = (day.done ? "Done" : `Question ${Math.min(day.i+1,day.ids.length)} of ${day.ids.length}`) + (rn>1 ? ` · Round ${rn}` : "");
   const label = day.done ? "Final score" : "Score";
   document.getElementById("bar").innerHTML =
     `<div class="scorecard" role="status" aria-live="polite"><div><div class="qcount">${left}</div></div>
@@ -558,51 +562,65 @@ function finish(q,qi,pts,picks){
   // record
   day.ans[day.i] = {qi, t:q.t, pts, tries:cur.tries+1, picks};
   S.used[qi] = true;
-  const tp = S.topics[q.t] || {seen:0, firstTry:0};
-  tp.seen++; if(pts===1) tp.firstTry++;
-  tp.review = pts!==1; tp.lastQ = qi; tp.lastDate = D;
-  S.topics[q.t] = tp;
+  if(roundNo()===1){
+    const tp = S.topics[q.t] || {seen:0, firstTry:0};
+    tp.seen++; if(pts===1) tp.firstTry++;
+    tp.review = pts!==1; tp.lastQ = qi; tp.lastDate = D;
+    S.topics[q.t] = tp;
+  }
   save(); renderBar();
   const last = day.i >= day.ids.length-1;
   document.getElementById("next").innerHTML = `<button class="btn" id="go" type="button">${last?"See final score":"Next question"}</button>`;
   const go = document.getElementById("go"); go.focus({preventScroll:true});
-  go.addEventListener("click",()=>{ day.i++; if(day.i>=day.ids.length){ day.done=true; } save(); route(); window.scrollTo({top:0}); });
+  go.addEventListener("click",()=>{ day.i++; if(day.i>=day.ids.length){ day.done=true; day.completed=true; } save(); route(); window.scrollTo({top:0}); });
 }
 
 function renderFinal(){
   const p = points();
   const r = p/day.ids.length; const msg = r>=.9 ? "Excellent work!" : r>=.7 ? "Great job. Keep it up!" : r>=.5 ? "Good effort. Tomorrow you'll see the tricky ones again." : "Keep going. Tomorrow you'll practice the ones you missed.";
   const rows = day.ans.map(a=>`<li><span>${esc(a.t)}</span><span class="pt p${a.pts===1?1:a.pts===0?0:5}">${a.pts===1?"+1":a.pts===0?"0":"+½"}</span></li>`).join("");
-  const again = day.ans.filter(a=>a.pts!==1).length;
+  const first = roundAns(day), again = first.filter(a=>a && a.pts!==1).length, rn = roundNo();
+  const note = rn>1 ? `Practice round ${rn}. Your official score for today is ${fmt(sumPts(first))} / ${day.ids.length} from round 1.` : (again ? `${again} topic${again>1?"s":""} will come back tomorrow, asked a different way.` : "Perfect day. Tomorrow brings 20 new questions.");
   document.getElementById("main").innerHTML =
    `<article class="card final">
-      <p class="sub" style="margin:0">Final score</p>
+      <p class="sub" style="margin:0">Final score${rn>1?` · Round ${rn}`:""}</p>
       <p class="big">${fmt(p)}<small> / ${day.ids.length}</small></p>
       <p>${msg}</p>
-      <p class="sub">${again ? `${again} topic${again>1?"s":""} will come back tomorrow, asked a different way.` : "Perfect day. Tomorrow brings 20 new questions."}</p>
+      <p class="sub">${note}</p>
+      <button class="btn" id="again" type="button">Clear and start over</button>
+      <p class="sub" style="font-size:15px">Same ${day.ids.length} questions, answers in a new order. Practice as many times as you want today.</p>
       <ul class="list">${rows}</ul>
     </article>`;
+  document.getElementById("again").addEventListener("click",()=>{
+    day.rounds = day.rounds || [];
+    day.rounds.push({ans: day.ans, score: points()});
+    day.ans = []; day.i = 0; day.done = false; day.completed = true;
+    day.orders = day.ids.map(i=>{ const q=BANK[i]; return q.y==="tf" ? [0,1] : shuffle(q.o.map((_,k)=>k)); });
+    save(); route(); window.scrollTo({top:0});
+  });
   renderBar();
 }
 
 function streak(){
   let n=0; const d=new Date();
-  if(!(S.days[today()]||{}).done) d.setDate(d.getDate()-1);
+  if(!isDone(S.days[today()]||{})) d.setDate(d.getDate()-1);
   for(;;){ const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    if(S.days[k] && S.days[k].done){ n++; d.setDate(d.getDate()-1);} else break; }
+    if(S.days[k] && isDone(S.days[k])){ n++; d.setDate(d.getDate()-1);} else break; }
   return n;
 }
 function renderReport(){
-  const done = Object.entries(S.days).filter(([,d])=>d.done).sort((a,b)=>b[0].localeCompare(a[0]));
-  const avg = done.length ? done.reduce((s,[,d])=>s+100*d.ans.reduce((x,a)=>x+a.pts,0)/d.ids.length,0)/done.length : 0;
+  const done = Object.entries(S.days).filter(([,d])=>isDone(d)).sort((a,b)=>b[0].localeCompare(a[0]));
+  const avg = done.length ? done.reduce((s,[,d])=>s+100*sumPts(roundAns(d))/d.ids.length,0)/done.length : 0;
   const allTopics = Object.keys(TOPICS);
   const seen = allTopics.filter(t=>S.topics[t]);
   const mastery = seen.map(t=>({t, pct: Math.round(100*S.topics[t].firstTry/S.topics[t].seen), n:S.topics[t].seen})).sort((a,b)=>a.pct-b.pct);
   const review = allTopics.filter(t=>S.topics[t] && S.topics[t].review);
   const hist = Object.entries(S.days).sort((a,b)=>b[0].localeCompare(a[0])).map(([k,d])=>{
-    const sc = d.ans.reduce((x,a)=>x+(a?a.pts:0),0);
-    const rows = d.ans.filter(Boolean).map(a=>{ const q=BANK[a.qi]; return `<tr><td>${esc(q.q)}<br><span class="empty">${a.tries===1?"1st try":"2nd try"} · ${esc(a.t)}</span></td><td class="pt p${a.pts===1?1:a.pts===0?0:5}">${a.pts===1?"1":a.pts===0?"0":"½"}</td></tr>`; }).join("");
-    return `<details><summary>${k} — ${fmt(sc)} / ${d.ids.length}${d.done?"":" (in progress)"}</summary><table class="tbl">${rows||'<tr><td class="empty">No answers yet.</td></tr>'}</table></details>`;
+    const first = roundAns(d), sc = sumPts(first);
+    const all = [...(d.rounds||[]).map(r=>r.score), ...(d.ans.some(Boolean) ? [sumPts(d.ans)+(d.done?"":"…")] : [])];
+    const roundsLine = all.length>1 ? `<tr><td colspan="2" class="empty">Rounds today: ${all.map((s,n)=>`R${n+1}: ${typeof s==="number"?fmt(s):s}`).join(" · ")}</td></tr>` : "";
+    const rows = roundsLine + first.filter(Boolean).map(a=>{ const q=BANK[a.qi]; return `<tr><td>${esc(q.q)}<br><span class="empty">${a.tries===1?"1st try":"2nd try"} · ${esc(a.t)}</span></td><td class="pt p${a.pts===1?1:a.pts===0?0:5}">${a.pts===1?"1":a.pts===0?"0":"½"}</td></tr>`; }).join("");
+    return `<details><summary>${k} — ${fmt(sc)} / ${d.ids.length}${isDone(d)?"":" (in progress)"}</summary><table class="tbl">${rows||'<tr><td class="empty">No answers yet.</td></tr>'}</table></details>`;
   }).join("");
   document.getElementById("report").innerHTML =
    `<h2>Progress report</h2>
@@ -625,7 +643,7 @@ document.getElementById("toggleReport").addEventListener("click",()=>{
   else { r.hidden=true; b.textContent="Progress report"; }
 });
 
-function route(){ while(!day.done && day.ans[day.i]) day.i++; if(day.i>=day.ids.length && !day.done){ day.done=true; save(); } if(day.done) renderFinal(); else renderQuestion(); }
+function route(){ while(!day.done && day.ans[day.i]) day.i++; if(day.i>=day.ids.length && !day.done){ day.done=true; day.completed=true; save(); } if(day.done) renderFinal(); else renderQuestion(); }
 route();
 </script>
 </body>
